@@ -36,6 +36,10 @@ func (k Kind) String() string {
 		return "OpenBrace"
 	case CloseBrace:
 		return "CloseBrace"
+	case Ampersand:
+		return "Ampersand"
+	case Linefeed:
+		return "Linefeed"
 	case Up:
 		return "Up"
 	case Down:
@@ -54,6 +58,8 @@ const (
 	CloseParen
 	OpenBrace
 	CloseBrace
+	Ampersand
+	Linefeed
 	Up
 	Down
 )
@@ -133,6 +139,9 @@ func (t *Tokenizer) readToken() Token {
 		case r == '_':
 			t.Read()
 			return Token{kind: Down, value: "_"}
+		case r == '&':
+			t.Read()
+			return Token{kind: Ampersand, value: "&"}
 		case unicode.IsNumber(r):
 			var value string
 			for r := t.Peek(); unicode.IsNumber(r); r = t.Peek() {
@@ -147,11 +156,16 @@ func (t *Tokenizer) readToken() Token {
 			return Token{kind: Identifier, value: value}
 		case r == '\\':
 			t.Read()
-			var value string
-			for r := t.Peek(); unicode.IsLetter(r); r = t.Peek() {
-				value += string(t.Read())
+			if t.Peek() == '\\' {
+				t.Read()
+				return Token{kind: Linefeed, value: "\\\\"}
+			} else {
+				var value string
+				for r := t.Peek(); unicode.IsLetter(r); r = t.Peek() {
+					value += string(t.Read())
+				}
+				return Token{kind: Command, value: value}
 			}
-			return Token{kind: Command, value: value}
 		default:
 			t.Read()
 			return Token{kind: Operator, value: string(r)}

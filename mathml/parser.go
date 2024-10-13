@@ -139,6 +139,24 @@ func (s Sqrt) ToMathMl(w io.Writer) {
 	write(w, "</msqrt>")
 }
 
+type Table struct {
+	table [][]Ast
+}
+
+func (t Table) ToMathMl(w io.Writer) {
+	write(w, "<mtable>")
+	for _, row := range t.table {
+		write(w, "<mtr>")
+		for _, item := range row {
+			write(w, "<mtd>")
+			item.ToMathMl(w)
+			write(w, "</mtd>")
+		}
+		write(w, "</mtr>")
+	}
+	write(w, "</mtable>")
+}
+
 func ScanDollar(text string) string {
 	out := bytes.Buffer{}
 	math := bytes.Buffer{}
@@ -200,12 +218,18 @@ func ParseLaTeX(latex string) (ast Ast, err error) {
 }
 
 func (p *parser) Parse(end Kind) Ast {
+	a, _ := p.ParseFunc(func(t Token) bool { return t.kind == end })
+	return a
+}
+
+func (p *parser) ParseFunc(isEnd func(token Token) bool) (Ast, Token) {
 	var list []Ast
 	for {
 		tok := p.tok.NextToken()
+		if isEnd(tok) {
+			return NewRow(list...), tok
+		}
 		switch tok.kind {
-		case end:
-			return NewRow(list...)
 		case Number:
 			list = append(list, SimpleItem{tok: tok})
 		case Identifier:
@@ -251,6 +275,8 @@ func (p *parser) ParseCommand(value string) Ast {
 		return Sqrt{p.ParseBrace()}
 	case "vec":
 		return UnderOver{base: p.ParseBrace(), over: SimpleOperator("&rarr;")}
+	case "table":
+		return p.parseTable()
 	case "overset":
 		over := p.ParseBrace()
 		return UnderOver{base: p.ParseBrace(), over: over}
@@ -308,4 +334,28 @@ func (p *parser) ParseBrace() Ast {
 		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
 	}
 	return p.Parse(CloseBrace)
+}
+
+func (p *parser) parseTable() Ast {
+	n := p.tok.NextToken()
+	if n.kind != OpenBrace {
+		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
+	}
+
+	var table [][]Ast
+	var row []Ast
+	for {
+		a, tok := p.ParseFunc(func(t Token) bool { return t.kind == CloseBrace || t.kind == Ampersand || t.kind == Linefeed })
+		row = append(row, a)
+		switch tok.kind {
+		case CloseBrace:
+			if len(row) > 0 {
+				table = append(table, row)
+			}
+			return Table{table}
+		case Linefeed:
+			table = append(table, row)
+			row = nil
+		}
+	}
 }

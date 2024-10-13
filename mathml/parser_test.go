@@ -34,6 +34,7 @@ func TestParse(t *testing.T) {
 		{"f(x_0)\\overset{!}{=}0", "<mrow><mi>f</mi><mrow><mo>(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo></mrow><mover><mo>=</mo><mo>!</mo></mover><mn>0</mn></mrow>"},
 		{"\\underset{n\\rightarrow\\infty}{\\lim}\\frac{1}{n}=0", "<mrow><munder><mi>lim</mi><mrow><mi>n</mi><mo>&rightarrow;</mo><mn>&infin;</mn></mrow></munder><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>=</mo><mn>0</mn></mrow>"},
 		{"\\sin(x)=\\sum_{k=0}^{\\infty}(-1)^k\\frac{x^{2k+1}}{(2k+1)!}", "<mrow><mi>sin</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo>=</mo><munderover><mo>&sum;</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mn>&infin;</mn></munderover><msup><mrow><mo>(</mo><mrow><mo>-</mo><mn>1</mn></mrow><mo>)</mo></mrow><mi>k</mi></msup><mfrac><msup><mi>x</mi><mrow><mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup><mrow><mrow><mo>(</mo><mrow><mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow><mo>!</mo></mrow></mfrac></mrow>"},
+		{"\\table{A&B&Y\\\\0&0&0\\\\0&1&0\\\\1&0&0\\\\1&1&1}", "<mtable><mtr><mtd><mi>A</mi></mtd><mtd><mi>B</mi></mtd><mtd><mi>Y</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable>"},
 	}
 
 	for _, test := range tests {
