@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-type Parser struct {
+type parser struct {
 	tok *Tokenizer
 }
 
@@ -94,28 +94,39 @@ func (i Index) ToMathMl(w io.Writer) {
 	write(w, "</msubsup>")
 }
 
-type Over struct {
-	base Ast
-	over Ast
+func NewIndex(base Ast, up Ast, down Ast) Ast {
+	if i, ok := base.(SimpleItem); ok && i.tok.kind == Operator {
+		return UnderOver{base: base, over: up, under: down}
+	}
+	return Index{base: base, up: up, down: down}
 }
 
-func (o Over) ToMathMl(w io.Writer) {
-	write(w, "<mover>")
-	o.base.ToMathMl(w)
-	o.over.ToMathMl(w)
-	write(w, "</mover>")
-}
-
-type Under struct {
+type UnderOver struct {
 	base  Ast
+	over  Ast
 	under Ast
 }
 
-func (o Under) ToMathMl(w io.Writer) {
-	write(w, "<munder>")
+func (o UnderOver) ToMathMl(w io.Writer) {
+	if o.over == nil {
+		write(w, "<munder>")
+		o.base.ToMathMl(w)
+		o.under.ToMathMl(w)
+		write(w, "</munder>")
+		return
+	}
+	if o.under == nil {
+		write(w, "<mover>")
+		o.base.ToMathMl(w)
+		o.over.ToMathMl(w)
+		write(w, "</mover>")
+		return
+	}
+	write(w, "<munderover>")
 	o.base.ToMathMl(w)
 	o.under.ToMathMl(w)
-	write(w, "</munder>")
+	o.over.ToMathMl(w)
+	write(w, "</munderover>")
 }
 
 type Sqrt struct {
@@ -184,11 +195,11 @@ func ParseLaTeX(latex string) (ast Ast, err error) {
 			}
 		}
 	}()
-	p := &Parser{tok: NewTokenizer(latex)}
+	p := &parser{tok: NewTokenizer(latex)}
 	return p.Parse(EOF), nil
 }
 
-func (p *Parser) Parse(end Kind) Ast {
+func (p *parser) Parse(end Kind) Ast {
 	var list []Ast
 	for {
 		tok := p.tok.NextToken()
@@ -213,7 +224,7 @@ func (p *Parser) Parse(end Kind) Ast {
 				p.tok.NextToken()
 				down = p.ParseBrace()
 			}
-			list[len(list)-1] = Index{list[len(list)-1], up, down}
+			list[len(list)-1] = NewIndex(list[len(list)-1], up, down)
 		case Down:
 			down := p.ParseBrace()
 			var up Ast
@@ -221,14 +232,14 @@ func (p *Parser) Parse(end Kind) Ast {
 				p.tok.NextToken()
 				up = p.ParseBrace()
 			}
-			list[len(list)-1] = Index{list[len(list)-1], up, down}
+			list[len(list)-1] = NewIndex(list[len(list)-1], up, down)
 		default:
 			panic(fmt.Sprintf("unexpected token: %v", tok))
 		}
 	}
 }
 
-func (p *Parser) ParseCommand(value string) Ast {
+func (p *parser) ParseCommand(value string) Ast {
 	switch value {
 	case "frac":
 		top := p.ParseBrace()
@@ -239,13 +250,13 @@ func (p *Parser) ParseCommand(value string) Ast {
 	case "sqrt":
 		return Sqrt{p.ParseBrace()}
 	case "vec":
-		return Over{base: p.ParseBrace(), over: SimpleOperator("&rarr;")}
+		return UnderOver{base: p.ParseBrace(), over: SimpleOperator("&rarr;")}
 	case "overset":
 		over := p.ParseBrace()
-		return Over{base: p.ParseBrace(), over: over}
+		return UnderOver{base: p.ParseBrace(), over: over}
 	case "underset":
 		under := p.ParseBrace()
-		return Under{base: p.ParseBrace(), under: under}
+		return UnderOver{base: p.ParseBrace(), under: under}
 	case "sum":
 		return SimpleOperator("&sum;")
 	case "int":
@@ -259,47 +270,22 @@ func (p *Parser) ParseCommand(value string) Ast {
 	case "infty":
 		return SimpleNumber("&infin;")
 	case "rightarrow":
-		return SimpleNumber("&rightarrow;")
-	case "alpha":
-		return SimpleIdent("&alpha;")
-	case "beta":
-		return SimpleIdent("&beta;")
-	case "Gamma":
-		return SimpleIdent("&Gamma;")
-	case "gamma":
-		return SimpleIdent("&gamma;")
-	case "Delta":
-		return SimpleIdent("&Delta;")
-	case "delta":
-		return SimpleIdent("&delta;")
-	case "Omega":
-		return SimpleIdent("&Omega;")
-	case "omega":
-		return SimpleIdent("&omega;")
-	case "Tau":
-		return SimpleIdent("&Tau;")
-	case "tau":
-		return SimpleIdent("&tau;")
-	case "Phi":
-		return SimpleIdent("&Phi;")
-	case "phi":
-		return SimpleIdent("&phi;")
-	case "Psi":
-		return SimpleIdent("&Psi;")
-	case "psi":
-		return SimpleIdent("&psi;")
-	case "Theta":
-		return SimpleIdent("&Theta;")
-	case "theta":
-		return SimpleIdent("&theta;")
-	case "chi":
-		return SimpleIdent("&chi;")
-	case "mu":
-		return SimpleIdent("&mu;")
-	case "epsilon":
-		return SimpleIdent("&epsilon;")
+		return SimpleOperator("&rightarrow;")
+	case "Rightarrow":
+		return SimpleOperator("&Rightarrow;")
+	case "sin":
+		return SimpleIdent("sin")
+	case "cos":
+		return SimpleIdent("cos")
+	case "tan":
+		return SimpleIdent("tan")
+	case "ln":
+		return SimpleIdent("ln")
+	case "lim":
+		return SimpleIdent("lim")
 	default:
-		return SimpleIdent(value)
+		// assuming it's a symbol
+		return SimpleIdent("&" + value + ";")
 	}
 }
 
@@ -313,7 +299,7 @@ func SimpleNumber(s string) Ast {
 	return SimpleItem{Token{kind: Number, value: s}}
 }
 
-func (p *Parser) ParseBrace() Ast {
+func (p *parser) ParseBrace() Ast {
 	n := p.tok.NextToken()
 	if n.kind == Number || n.kind == Identifier {
 		return SimpleItem{n}

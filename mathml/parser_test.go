@@ -29,10 +29,11 @@ func TestParse(t *testing.T) {
 		{"x_n^2", "<msubsup><mi>x</mi><mi>n</mi><mn>2</mn></msubsup>"},
 		{"x^2_n", "<msubsup><mi>x</mi><mi>n</mi><mn>2</mn></msubsup>"},
 		{"\\int\\frac{1}{x^2} \\dif x=-\\frac{1}{x}", "<mrow><mo>&int;</mo><mfrac><mn>1</mn><msup><mi>x</mi><mn>2</mn></msup></mfrac><mn>d</mn><mi>x</mi><mo>=</mo><mo>-</mo><mfrac><mn>1</mn><mi>x</mi></mfrac></mrow>"},
-		{"\\oint_S\\vec{H}\\cdot\\vec{\\dif s}=\\Theta", "<mrow><msub><mo>&oint;</mo><mi>S</mi></msub><mover><mi>H</mi><mo>&rarr;</mo></mover><mo>&middot;</mo><mover><mrow><mn>d</mn><mi>s</mi></mrow><mo>&rarr;</mo></mover><mo>=</mo><mi>&Theta;</mi></mrow>"},
+		{"\\oint_S\\vec{H}\\cdot\\vec{\\dif s}=\\Theta", "<mrow><munder><mo>&oint;</mo><mi>S</mi></munder><mover><mi>H</mi><mo>&rarr;</mo></mover><mo>&middot;</mo><mover><mrow><mn>d</mn><mi>s</mi></mrow><mo>&rarr;</mo></mover><mo>=</mo><mi>&Theta;</mi></mrow>"},
 		{"\\chi\\mu\\epsilon", "<mrow><mi>&chi;</mi><mi>&mu;</mi><mi>&epsilon;</mi></mrow>"},
 		{"f(x_0)\\overset{!}{=}0", "<mrow><mi>f</mi><mrow><mo>(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo></mrow><mover><mo>=</mo><mo>!</mo></mover><mn>0</mn></mrow>"},
-		{"\\underset{n\\rightarrow\\infty}{\\lim}\\frac{1}{n}=0", "<mrow><munder><mi>lim</mi><mrow><mi>n</mi><mn>&rightarrow;</mn><mn>&infin;</mn></mrow></munder><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>=</mo><mn>0</mn></mrow>"},
+		{"\\underset{n\\rightarrow\\infty}{\\lim}\\frac{1}{n}=0", "<mrow><munder><mi>lim</mi><mrow><mi>n</mi><mo>&rightarrow;</mo><mn>&infin;</mn></mrow></munder><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>=</mo><mn>0</mn></mrow>"},
+		{"\\sin(x)=\\sum_{k=0}^{\\infty}(-1)^k\\frac{x^{2k+1}}{(2k+1)!}", "<mrow><mi>sin</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo>=</mo><munderover><mo>&sum;</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mn>&infin;</mn></munderover><msup><mrow><mo>(</mo><mrow><mo>-</mo><mn>1</mn></mrow><mo>)</mo></mrow><mi>k</mi></msup><mfrac><msup><mi>x</mi><mrow><mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup><mrow><mrow><mo>(</mo><mrow><mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn></mrow><mo>)</mo></mrow><mo>!</mo></mrow></mfrac></mrow>"},
 	}
 
 	for _, test := range tests {
