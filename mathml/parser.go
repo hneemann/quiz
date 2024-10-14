@@ -50,7 +50,7 @@ func (f Row) ToMathMl(w io.Writer) {
 type Empty struct {
 }
 
-func (e Empty) ToMathMl(w io.Writer) {
+func (e Empty) ToMathMl(io.Writer) {
 }
 
 func NewRow(l ...Ast) Ast {
