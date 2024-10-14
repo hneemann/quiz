@@ -47,11 +47,21 @@ func (f Row) ToMathMl(w io.Writer) {
 	write(w, "</mrow>")
 }
 
+type Empty struct {
+}
+
+func (e Empty) ToMathMl(w io.Writer) {
+}
+
 func NewRow(l ...Ast) Ast {
-	if len(l) == 1 {
+	switch len(l) {
+	case 0:
+		return Empty{}
+	case 1:
 		return l[0]
+	default:
+		return Row{l}
 	}
-	return Row{l}
 }
 
 type Fraction struct {
@@ -139,18 +149,67 @@ func (s Sqrt) ToMathMl(w io.Writer) {
 	write(w, "</msqrt>")
 }
 
+type align int
+
+const (
+	left align = iota
+	center
+	right
+)
+
+type cellStyle struct {
+	leftBorder  bool
+	rightBorder bool
+	align       align
+}
+
+func (s cellStyle) style() string {
+	style := ""
+	if s.leftBorder {
+		style += "border-left:1px solid black;"
+	}
+	if s.rightBorder {
+		style += "border-right:1px solid black;"
+	}
+	switch s.align {
+	case left:
+		style += "text-align:left;"
+	case right:
+		style += "text-align:right;"
+	}
+	return style
+}
+
 type Table struct {
 	table [][]Ast
+	style []cellStyle
 }
 
 func (t Table) ToMathMl(w io.Writer) {
 	write(w, "<mtable>")
+	topLine := false
 	for _, row := range t.table {
 		write(w, "<mtr>")
-		for _, item := range row {
-			write(w, "<mtd>")
-			item.ToMathMl(w)
-			write(w, "</mtd>")
+		if len(row) == 0 {
+			topLine = true
+		} else {
+			for i, item := range row {
+				style := ""
+				if i < len(t.style) {
+					style = t.style[i].style()
+				}
+				if topLine {
+					style += "border-top:1px solid black;"
+				}
+				if style != "" {
+					write(w, "<mtd style=\"", style, "\">")
+				} else {
+					write(w, "<mtd>")
+				}
+				item.ToMathMl(w)
+				write(w, "</mtd>")
+			}
+			topLine = false
 		}
 		write(w, "</mtr>")
 	}
@@ -271,6 +330,12 @@ func (p *parser) ParseCommand(value string) Ast {
 		return Fraction{top, bottom}
 	case "pm":
 		return SimpleOperator("&PlusMinus;")
+	case "left", "right":
+		t := p.tok.NextToken()
+		if !(t.kind == OpenParen || t.kind == CloseParen || t.kind == Operator) {
+			panic(fmt.Sprintf("unexpected token: %v", t))
+		}
+		return SimpleItem{tok: t}
 	case "sqrt":
 		return Sqrt{p.ParseBrace()}
 	case "vec":
@@ -338,6 +403,12 @@ func (p *parser) ParseBrace() Ast {
 
 func (p *parser) parseTable() Ast {
 	n := p.tok.NextToken()
+	var styles []cellStyle
+	if n.kind == Operator && n.value == "[" {
+		styles = p.parseTableDef()
+		n = p.tok.NextToken()
+	}
+
 	if n.kind != OpenBrace {
 		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
 	}
@@ -352,10 +423,60 @@ func (p *parser) parseTable() Ast {
 			if len(row) > 0 {
 				table = append(table, row)
 			}
-			return Table{table}
+			return Table{table: table, style: styles}
 		case Linefeed:
+			if len(row) == 1 {
+				if _, ok := row[0].(Empty); ok {
+					row = nil
+				}
+			}
 			table = append(table, row)
 			row = nil
+		}
+	}
+}
+
+func (p *parser) parseTableDef() []cellStyle {
+	var styles []cellStyle
+	complete := false
+	cs := cellStyle{}
+	for {
+		switch p.tok.Read() {
+		case ']':
+			if complete {
+				styles = append(styles, cs)
+			}
+			return styles
+		case '|':
+			if complete {
+				cs.rightBorder = true
+				styles = append(styles, cs)
+				cs = cellStyle{}
+				complete = false
+			} else {
+				cs.leftBorder = true
+			}
+		case 'l':
+			if complete {
+				styles = append(styles, cs)
+				cs = cellStyle{}
+			}
+			complete = true
+			cs.align = left
+		case 'r':
+			if complete {
+				styles = append(styles, cs)
+				cs = cellStyle{}
+			}
+			complete = true
+			cs.align = right
+		case 'c':
+			if complete {
+				styles = append(styles, cs)
+				cs = cellStyle{}
+			}
+			complete = true
+			cs.align = center
 		}
 	}
 }
