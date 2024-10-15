@@ -330,12 +330,17 @@ func (p *parser) ParseCommand(value string) Ast {
 		return Fraction{top, bottom}
 	case "pm":
 		return SimpleOperator("&PlusMinus;")
-	case "left", "right":
-		t := p.tok.NextToken()
-		if !(t.kind == OpenParen || t.kind == CloseParen || t.kind == Operator) {
-			panic(fmt.Sprintf("unexpected token: %v", t))
+	case "left":
+		open := p.tok.NextToken()
+		if !(open.kind == OpenParen || open.kind == CloseParen || open.kind == Operator) {
+			panic(fmt.Sprintf("unexpected token: %v", open))
 		}
-		return SimpleItem{tok: t}
+		inner, _ := p.ParseFunc(func(t Token) bool { return t.kind == Command && t.value == "right" })
+		clo := p.tok.NextToken()
+		if !(clo.kind == OpenParen || clo.kind == CloseParen || clo.kind == Operator) {
+			panic(fmt.Sprintf("unexpected token: %v", clo))
+		}
+		return NewRow(SimpleOperator(open.value), inner, SimpleOperator(clo.value))
 	case "sqrt":
 		return Sqrt{p.ParseBrace()}
 	case "vec":
