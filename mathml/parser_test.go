@@ -10,7 +10,8 @@ func TestParse(t *testing.T) {
 	tests := []struct {
 		in  string
 		out string
-	}{
+	}{ // add entries only if they are visually confirmed to be rendered correct in a browser
+		{"", ""},
 		{"1", "<mn>1</mn>"},
 		{"1+2", "<mrow><mn>1</mn><mo>+</mo><mn>2</mn></mrow>"},
 		{"1?2", "<mrow><mn>1</mn><mo>?</mo><mn>2</mn></mrow>"},
@@ -38,6 +39,9 @@ func TestParse(t *testing.T) {
 		{"\\table{A&B&Y\\\\0&0&0\\\\0&1&0\\\\1&0&0\\\\1&1&1}", "<mtable><mtr><mtd><mi>A</mi></mtd><mtd><mi>B</mi></mtd><mtd><mi>Y</mi></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable>"},
 		{"\\table[rcl]{y&=&1\\\\y_{1,2}&=&100}", "<mtable><mtr><mtd style=\"text-align:right;\"><mi>y</mi></mtd><mtd><mo>=</mo></mtd><mtd style=\"text-align:left;\"><mn>1</mn></mtd></mtr><mtr><mtd style=\"text-align:right;\"><msub><mi>y</mi><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow></msub></mtd><mtd><mo>=</mo></mtd><mtd style=\"text-align:left;\"><mn>100</mn></mtd></mtr></mtable>"},
 		{"\\table[cc|c]{A&B&Y\\\\\\\\0&0&0\\\\0&1&0\\\\1&0&0\\\\1&1&1}", "<mtable><mtr><mtd><mi>A</mi></mtd><mtd style=\"border-right:1px solid black;\"><mi>B</mi></mtd><mtd><mi>Y</mi></mtd></mtr><mtr></mtr><mtr><mtd style=\"border-top:1px solid black;\"><mn>0</mn></mtd><mtd style=\"border-right:1px solid black;border-top:1px solid black;\"><mn>0</mn></mtd><mtd style=\"border-top:1px solid black;\"><mn>0</mn></mtd></mtr><mtr><mtd><mn>0</mn></mtd><mtd style=\"border-right:1px solid black;\"><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd style=\"border-right:1px solid black;\"><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd style=\"border-right:1px solid black;\"><mn>1</mn></mtd><mtd><mn>1</mn></mtd></mtr></mtable>"},
+		{"\\leftarrow\\Leftarrow\\Rightarrow\\rightarrow", "<mrow><mo>&leftarrow;</mo><mo>&Leftarrow;</mo><mo>&Rightarrow;</mo><mo>&rightarrow;</mo></mrow>"},
+		{"\\left[x+1\\right]^2", "<msup><mrow><mo>[</mo><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mo>]</mo></mrow><mn>2</mn></msup>"},
+		{"\\left.x+1\\right|^2_0", "<msubsup><mrow><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mo>|</mo></mrow><mn>0</mn><mn>2</mn></msubsup>"},
 	}
 
 	for _, test := range tests {

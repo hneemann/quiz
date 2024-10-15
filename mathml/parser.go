@@ -301,19 +301,19 @@ func (p *parser) ParseFunc(isEnd func(token Token) bool) (Ast, Token) {
 		case Command:
 			list = append(list, p.ParseCommand(tok.value))
 		case Up:
-			up := p.ParseBrace()
+			up := p.ParseInBrace()
 			var down Ast
 			if p.tok.PeekToken().kind == Down {
 				p.tok.NextToken()
-				down = p.ParseBrace()
+				down = p.ParseInBrace()
 			}
 			list[len(list)-1] = NewIndex(list[len(list)-1], up, down)
 		case Down:
-			down := p.ParseBrace()
+			down := p.ParseInBrace()
 			var up Ast
 			if p.tok.PeekToken().kind == Up {
 				p.tok.NextToken()
-				up = p.ParseBrace()
+				up = p.ParseInBrace()
 			}
 			list[len(list)-1] = NewIndex(list[len(list)-1], up, down)
 		default:
@@ -325,34 +325,28 @@ func (p *parser) ParseFunc(isEnd func(token Token) bool) (Ast, Token) {
 func (p *parser) ParseCommand(value string) Ast {
 	switch value {
 	case "frac":
-		top := p.ParseBrace()
-		bottom := p.ParseBrace()
+		top := p.ParseInBrace()
+		bottom := p.ParseInBrace()
 		return Fraction{top, bottom}
 	case "pm":
 		return SimpleOperator("&PlusMinus;")
 	case "left":
-		open := p.tok.NextToken()
-		if !(open.kind == OpenParen || open.kind == CloseParen || open.kind == Operator) {
-			panic(fmt.Sprintf("unexpected token: %v", open))
-		}
+		open := p.getBrace(OpenParen)
 		inner, _ := p.ParseFunc(func(t Token) bool { return t.kind == Command && t.value == "right" })
-		clo := p.tok.NextToken()
-		if !(clo.kind == OpenParen || clo.kind == CloseParen || clo.kind == Operator) {
-			panic(fmt.Sprintf("unexpected token: %v", clo))
-		}
-		return NewRow(SimpleOperator(open.value), inner, SimpleOperator(clo.value))
+		close := p.getBrace(CloseParen)
+		return NewRow(open, inner, close)
 	case "sqrt":
-		return Sqrt{p.ParseBrace()}
+		return Sqrt{p.ParseInBrace()}
 	case "vec":
-		return UnderOver{base: p.ParseBrace(), over: SimpleOperator("&rarr;")}
+		return UnderOver{base: p.ParseInBrace(), over: SimpleOperator("&rarr;")}
 	case "table":
 		return p.parseTable()
 	case "overset":
-		over := p.ParseBrace()
-		return UnderOver{base: p.ParseBrace(), over: over}
+		over := p.ParseInBrace()
+		return UnderOver{base: p.ParseInBrace(), over: over}
 	case "underset":
-		under := p.ParseBrace()
-		return UnderOver{base: p.ParseBrace(), under: under}
+		under := p.ParseInBrace()
+		return UnderOver{base: p.ParseInBrace(), under: under}
 	case "sum":
 		return SimpleOperator("&sum;")
 	case "int":
@@ -369,6 +363,10 @@ func (p *parser) ParseCommand(value string) Ast {
 		return SimpleOperator("&rightarrow;")
 	case "Rightarrow":
 		return SimpleOperator("&Rightarrow;")
+	case "leftarrow":
+		return SimpleOperator("&leftarrow;")
+	case "Leftarrow":
+		return SimpleOperator("&Leftarrow;")
 	case "sin":
 		return SimpleIdent("sin")
 	case "cos":
@@ -385,6 +383,17 @@ func (p *parser) ParseCommand(value string) Ast {
 	}
 }
 
+func (p *parser) getBrace(brace Kind) Ast {
+	b := p.tok.NextToken()
+	if !(b.kind == brace || b.kind == Operator) {
+		panic(fmt.Sprintf("unexpected token behind \\left or \\right: %v", b))
+	}
+	if b.value == "." {
+		return Empty{}
+	}
+	return SimpleOperator(b.value)
+}
+
 func SimpleIdent(s string) Ast {
 	return SimpleItem{Token{kind: Identifier, value: s}}
 }
@@ -395,7 +404,7 @@ func SimpleNumber(s string) Ast {
 	return SimpleItem{Token{kind: Number, value: s}}
 }
 
-func (p *parser) ParseBrace() Ast {
+func (p *parser) ParseInBrace() Ast {
 	n := p.tok.NextToken()
 	if n.kind == Number || n.kind == Identifier {
 		return SimpleItem{n}
@@ -415,7 +424,7 @@ func (p *parser) parseTable() Ast {
 	}
 
 	if n.kind != OpenBrace {
-		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
+		panic(fmt.Sprintf("unexpected token behind \\table, expected {, got %v", n))
 	}
 
 	var table [][]Ast
