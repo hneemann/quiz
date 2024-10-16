@@ -30,7 +30,7 @@ func TestParse(t *testing.T) {
 		{"x_n^2", "<msubsup><mi>x</mi><mi>n</mi><mn>2</mn></msubsup>"},
 		{"x^2_n", "<msubsup><mi>x</mi><mi>n</mi><mn>2</mn></msubsup>"},
 		{"\\int\\frac{1}{x^2} \\dif x=-\\frac{1}{x}", "<mrow><mo>&int;</mo><mfrac><mn>1</mn><msup><mi>x</mi><mn>2</mn></msup></mfrac><mn>d</mn><mi>x</mi><mo>=</mo><mo>-</mo><mfrac><mn>1</mn><mi>x</mi></mfrac></mrow>"},
-		{"\\oint_S\\vec{H}\\cdot\\vec{\\dif s}=\\Theta", "<mrow><munder><mo>&oint;</mo><mi>S</mi></munder><mover><mi>H</mi><mo>&rarr;</mo></mover><mo>&middot;</mo><mover><mrow><mn>d</mn><mi>s</mi></mrow><mo>&rarr;</mo></mover><mo>=</mo><mi>&Theta;</mi></mrow>"},
+		{"\\oint_S\\vec{H}\\cdot\\vec{\\dif s}=\\Theta", "<mrow><munder><mo>&oint;</mo><mi>S</mi></munder><mover><mi>H</mi><mo mathsize=\"75%\">&rarr;</mo></mover><mo>&middot;</mo><mover><mrow><mn>d</mn><mi>s</mi></mrow><mo mathsize=\"75%\">&rarr;</mo></mover><mo>=</mo><mi>&Theta;</mi></mrow>"},
 		{"\\chi\\mu\\epsilon", "<mrow><mi>&chi;</mi><mi>&mu;</mi><mi>&epsilon;</mi></mrow>"},
 		{"f(x_0)\\overset{!}{=}0", "<mrow><mi>f</mi><mrow><mo>(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>)</mo></mrow><mover><mo>=</mo><mo>!</mo></mover><mn>0</mn></mrow>"},
 		{"\\underset{n\\rightarrow\\infty}{\\lim}\\frac{1}{n}=0", "<mrow><munder><mi>lim</mi><mrow><mi>n</mi><mo>&rightarrow;</mo><mn>&infin;</mn></mrow></munder><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>=</mo><mn>0</mn></mrow>"},
@@ -42,6 +42,7 @@ func TestParse(t *testing.T) {
 		{"\\leftarrow\\Leftarrow\\Rightarrow\\rightarrow", "<mrow><mo>&leftarrow;</mo><mo>&Leftarrow;</mo><mo>&Rightarrow;</mo><mo>&rightarrow;</mo></mrow>"},
 		{"\\left[x+1\\right]^2", "<msup><mrow><mo>[</mo><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mo>]</mo></mrow><mn>2</mn></msup>"},
 		{"\\left.x+1\\right|^2_0", "<msubsup><mrow><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mo>|</mo></mrow><mn>0</mn><mn>2</mn></msubsup>"},
+		{"f'(x)=2x", "<mrow><mi>f</mi><mo>'</mo><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo>=</mo><mn>2</mn><mi>x</mi></mrow>"},
 	}
 
 	for _, test := range tests {

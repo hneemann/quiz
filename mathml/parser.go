@@ -15,18 +15,31 @@ type Ast interface {
 }
 
 type SimpleItem struct {
-	tok Token
+	tok      Token
+	fontsize string
+}
+
+func (s SimpleItem) setFontSize(size string) SimpleItem {
+	s.fontsize = size
+	return s
 }
 
 func (s SimpleItem) ToMathMl(w io.Writer) {
 	switch s.tok.kind {
 	case Number:
-		write(w, "<mn>", s.tok.value, "</mn>")
+		s.write(w, "mn")
 	case Identifier:
-		write(w, "<mi>", s.tok.value, "</mi>")
+		s.write(w, "mi")
 	default:
-		write(w, "<mo>", s.tok.value, "</mo>")
+		s.write(w, "mo")
 	}
+}
+func (s SimpleItem) write(w io.Writer, tag string) {
+	write(w, "<", tag)
+	if s.fontsize != "" {
+		write(w, " mathsize=\"", s.fontsize, "\"")
+	}
+	write(w, ">", s.tok.value, "</", tag, ">")
 }
 
 func write(w io.Writer, s ...string) {
@@ -338,7 +351,7 @@ func (p *parser) ParseCommand(value string) Ast {
 	case "sqrt":
 		return Sqrt{p.ParseInBrace()}
 	case "vec":
-		return UnderOver{base: p.ParseInBrace(), over: SimpleOperator("&rarr;")}
+		return UnderOver{base: p.ParseInBrace(), over: SimpleOperator("&rarr;").setFontSize("75%")}
 	case "table":
 		return p.parseTable()
 	case "overset":
@@ -395,19 +408,19 @@ func (p *parser) getBrace(brace Kind) Ast {
 }
 
 func SimpleIdent(s string) Ast {
-	return SimpleItem{Token{kind: Identifier, value: s}}
+	return SimpleItem{tok: Token{kind: Identifier, value: s}}
 }
-func SimpleOperator(s string) Ast {
-	return SimpleItem{Token{kind: Operator, value: s}}
+func SimpleOperator(s string) SimpleItem {
+	return SimpleItem{tok: Token{kind: Operator, value: s}}
 }
 func SimpleNumber(s string) Ast {
-	return SimpleItem{Token{kind: Number, value: s}}
+	return SimpleItem{tok: Token{kind: Number, value: s}}
 }
 
 func (p *parser) ParseInBrace() Ast {
 	n := p.tok.NextToken()
 	if n.kind == Number || n.kind == Identifier {
-		return SimpleItem{n}
+		return SimpleItem{tok: n}
 	}
 	if n.kind != OpenBrace {
 		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
