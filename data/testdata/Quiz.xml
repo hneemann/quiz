@@ -1,0 +1,48 @@
+<Lecture>
+    <Name>Elektronik 1</Name>
+    <Description>In diesem Quiz werden Fragen zur Elektronik 1 gestellt.</Description>
+    <Chapter>
+        <Name>Die Diode</Name>
+        <Description>Hier geht es um die Eigenschaften der Diode.</Description>
+        <Task>
+            <Question>Eine Diode ...</Question>
+            <Input id="elBau" type="checkbox">
+                <Label>ist ein elektronisches Bauteil.</Label>
+                <Validator>
+                    <Expression>elBau</Expression>
+                </Validator>
+            </Input>
+            <Input id="zwei" type="checkbox">
+                <Label>hat zwei Anschlüsse</Label>
+                <Validator>
+                    <Expression>zwei</Expression>
+                </Validator>
+            </Input>
+            <Input id="drei" type="checkbox">
+                <Label>hat drei Anschlüsse</Label>
+                <Validator>
+                    <Expression>!drei</Expression>
+                </Validator>
+            </Input>
+            <Input id="linear" type="checkbox">
+                <Label>zeigt lineares Verhalten.</Label>
+                <Validator>
+                    <Expression>!linear</Expression>
+                </Validator>
+            </Input>
+            <Input id="nlinear" type="checkbox">
+                <Label>zeigt nicht lineares Verhalten.</Label>
+                <Validator>
+                    <Expression>nlinear</Expression>
+                </Validator>
+            </Input>
+            <Validator>
+                <Expression>
+                    if nlinear and linear
+                    then "Wie kann eine Diode gleichzeitig linear und nicht linear sein?"
+                    else true
+                </Expression>
+            </Validator>
+        </Task>
+    </Chapter>
+</Lecture>

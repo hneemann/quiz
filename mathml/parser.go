@@ -440,7 +440,7 @@ func (p *parser) parseTable() Ast {
 			return Table{table: table, style: styles}
 		case Linefeed:
 			if len(row) == 1 {
-				if _, ok := row[0].(Empty); ok {
+				if si, ok := row[0].(SimpleItem); ok && si.tok.value == "-" {
 					row = nil
 				}
 			}
