@@ -7,7 +7,6 @@ import (
 	"github.com/hneemann/parser2"
 	"github.com/hneemann/parser2/funcGen"
 	"github.com/hneemann/parser2/value"
-	"github.com/hneemann/parser2/value/export"
 	"io"
 	"math"
 	"strconv"
@@ -209,7 +208,24 @@ func (e Expression) ToClosure() (funcGen.Function[value.Value], bool) {
 	return funcGen.Function[value.Value]{}, false
 }
 
-func createExpressionMethods() value.MethodMap {
+type countVarUsageVisitor struct {
+	n int
+}
+
+func (c *countVarUsageVisitor) Visit(ast parser2.AST) bool {
+	switch a := ast.(type) {
+	case *parser2.FunctionCall:
+		for _, arg := range a.Args {
+			arg.Traverse(c)
+		}
+		return false
+	case *parser2.Ident:
+		c.n++
+	}
+	return true
+}
+
+func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMap {
 	return value.MethodMap{
 		"eval": value.MethodAtType(1, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
 			if argList, ok := stack.Get(1).(*value.List); ok {
@@ -227,18 +243,31 @@ func createExpressionMethods() value.MethodMap {
 				}
 				r, err := e.fu.Eval(args...)
 				if err != nil {
-					var er parser2.NotFoundError
-					if errors.As(err, &er) {
-						return nil, fmt.Errorf("'%s' nicht erwartet in '%s'", er.NotFound(), e.expression)
-					}
-					return nil, fmt.Errorf("Der Ausdruck '%s' konnte nicht berechnet werden!", e.expression)
+					return nil, checkNotFoundError(err, e.expression)
 				}
 				return value.Float(r), nil
 			} else {
 				return nil, fmt.Errorf("expected a list, got %v", stack.Get(1))
 			}
 		}),
+		"varUsages": value.MethodAtType(0, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
+			ast, err := parser.Parse(e.expression)
+			if err != nil {
+				return nil, checkNotFoundError(err, e.expression)
+			}
+			v := countVarUsageVisitor{}
+			ast.Traverse(&v)
+			return value.Int(v.n), nil
+		}),
 	}
+}
+
+func checkNotFoundError(err error, expression string) error {
+	var er parser2.NotFoundError
+	if errors.As(err, &er) {
+		return fmt.Errorf("'%s' nicht erwartet in '%s'", er.NotFound(), expression)
+	}
+	return fmt.Errorf("Der Ausdruck '%s' konnte nicht berechnet werden!", expression)
 }
 
 const ExpressionTypeId = 10
@@ -249,9 +278,17 @@ func (e Expression) GetType() value.Type {
 
 var myParser = value.New().
 	AddFinalizerValue(func(f *value.FunctionGenerator) {
-		export.AddHTMLStylingHelpers(f)
+
+		f.AddStaticFunction("cmpFunc", funcGen.Function[value.Value]{
+			Func: value.Must(f.GenerateFromString(`let soll=parseFunc(a,vars);
+                                                        let ist=parseFunc(b,vars);
+                                                        !values.present(x->abs(soll.eval(x)-ist.eval(x))>0.001)`, "a", "b", "vars", "values")),
+			Args:   4,
+			IsPure: true,
+		}.SetDescription("func a", "func b", "argList", "values", "compares two functions"))
+
 		p := f.GetParser()
-		f.RegisterMethods(ExpressionTypeId, createExpressionMethods())
+		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(p))
 		//p.SetNumberMatcher(number)
 		p.TextOperator(map[string]string{"in": "~", "is": "=", "or": "|", "and": "&"})
 	}).AddStaticFunction("parseFunc",
@@ -286,17 +323,18 @@ var myParser = value.New().
 func createExpression(expr string, args []string) (value.Value, error) {
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
-		var e parser2.NotFoundError
-		if errors.As(err, &e) {
-			return nil, fmt.Errorf("'%s' nicht erwartet in '%s'", e.NotFound(), expr)
+		var er parser2.NotFoundError
+		if errors.As(err, &er) {
+			return nil, fmt.Errorf("'%s' nicht erwartet in '%s'", er.NotFound(), expr)
 		}
-		return nil, fmt.Errorf("Ungültiger Ausdruck '%s'", expr)
+		return nil, fmt.Errorf("Der Ausdruck '%s' enthält Fehler!", expr)
 	}
 	return Expression{expression: expr, fu: fu}, nil
 }
 
 var floatParser = funcGen.New[float64]().
 	AddConstant("pi", math.Pi).
+	AddConstant("e", math.E).
 	AddSimpleOp("=", true, func(a, b float64) (float64, error) { return fromBool(a == b), nil }).
 	AddSimpleOp("<", false, func(a, b float64) (float64, error) { return fromBool(a < b), nil }).
 	AddSimpleOp(">", false, func(a, b float64) (float64, error) { return fromBool(a > b), nil }).

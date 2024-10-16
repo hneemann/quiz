@@ -50,10 +50,7 @@
                 <Label>Die Ableitung lautet $f'(x)=$</Label>
                 <Validator>
                     <Expression>
-                        let soll=parseFunc("3*x^2+2",["x"]);
-                        let ist=parseFunc(a.func,["x"]);
-                        let cmp=[-2,-1,0,1,2];
-                        !cmp.present(x->abs(soll.eval([x])-ist.eval([x]))>0.001)
+                        cmpFunc("3*x^2+2",a.func,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Help>Die Ableitung der Funktion $f(x)=x^n$ lautet $f'(x)=nx^{n-1}$.</Help>
                     <Explanation>Die Ableitung lautet $f'(x)=3x^2+2$.</Explanation>
