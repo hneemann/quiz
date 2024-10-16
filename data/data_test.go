@@ -8,7 +8,6 @@ import (
 )
 
 func TestNew(t *testing.T) {
-
 	f, err := os.Open("testdata/Quiz.xml")
 	assert.NoError(t, err)
 
@@ -39,7 +38,22 @@ func TestNew(t *testing.T) {
 	input["nlinear"] = true
 
 	result = task1.Validate(input, false)
-
 	assert.Equal(t, 0, len(result))
+
+	task2 := lecture.Chapter[0].Task[1]
+	input = make(DataMap)
+	input["func"] = "3*x^2+2"
+	result = task2.Validate(input, false)
+	assert.Equal(t, 0, len(result))
+
+	input = make(DataMap)
+	input["func"] = "2+x^2*3"
+	result = task2.Validate(input, false)
+	assert.Equal(t, 0, len(result))
+
+	input = make(DataMap)
+	input["func"] = "3*x^2+1"
+	result = task2.Validate(input, false)
+	assert.Equal(t, 1, len(result))
 
 }

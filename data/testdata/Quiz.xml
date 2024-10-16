@@ -9,40 +9,56 @@
             <Input id="elBau" type="checkbox">
                 <Label>ist ein elektronisches Bauteil.</Label>
                 <Validator>
-                    <Expression>elBau</Expression>
+                    <Expression>a.elBau</Expression>
                 </Validator>
             </Input>
             <Input id="zwei" type="checkbox">
                 <Label>hat zwei Anschlüsse</Label>
                 <Validator>
-                    <Expression>zwei</Expression>
+                    <Expression>a.zwei</Expression>
                 </Validator>
             </Input>
             <Input id="drei" type="checkbox">
                 <Label>hat drei Anschlüsse</Label>
                 <Validator>
-                    <Expression>!drei</Expression>
+                    <Expression>!a.drei</Expression>
                 </Validator>
             </Input>
             <Input id="linear" type="checkbox">
                 <Label>zeigt lineares Verhalten.</Label>
                 <Validator>
-                    <Expression>!linear</Expression>
+                    <Expression>!a.linear</Expression>
                 </Validator>
             </Input>
             <Input id="nlinear" type="checkbox">
                 <Label>zeigt nicht lineares Verhalten.</Label>
                 <Validator>
-                    <Expression>nlinear</Expression>
+                    <Expression>a.nlinear</Expression>
                 </Validator>
             </Input>
             <Validator>
                 <Expression>
-                    if nlinear and linear
+                    if a.nlinear and a.linear
                     then "Wie kann eine Diode gleichzeitig linear und nicht linear sein?"
                     else true
                 </Expression>
             </Validator>
+        </Task>
+        <Task>
+            <Question>Geben Sie die Ableitung der Funktion $f(x)=x^3+2x-3$ an:</Question>
+            <Input id="func" type="text">
+                <Label>Die Ableitung lautet $f'(x)=$</Label>
+                <Validator>
+                    <Expression>
+                        let soll=parseFunc("3*x^2+2",["x"]);
+                        let ist=parseFunc(a.func,["x"]);
+                        let cmp=[-2,-1,0,1,2];
+                        !cmp.present(x->abs(soll.eval([x])-ist.eval([x]))>0.001)
+                    </Expression>
+                    <Help>Die Ableitung der Funktion $f(x)=x^n$ lautet $f'(x)=nx^{n-1}$.</Help>
+                    <Explanation>Die Ableitung lautet $f'(x)=3x^2+2$.</Explanation>
+                </Validator>
+            </Input>
         </Task>
     </Chapter>
 </Lecture>
