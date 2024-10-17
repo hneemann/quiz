@@ -305,6 +305,8 @@ func (c *countVarUsageVisitor) Visit(ast parser2.AST) bool {
 			arg.Traverse(c)
 		}
 		return false
+	case *parser2.Const[value.Value]:
+		c.n++
 	case *parser2.Ident:
 		c.n++
 	}
@@ -377,6 +379,13 @@ var myParser = value.New().
 			Args:   4,
 			IsPure: true,
 		}.SetDescription("func a", "func b", "argList", "values", "compares two functions"))
+		f.AddStaticFunction("cmpFuncCplx", funcGen.Function[value.Value]{
+			Func: value.Must(f.GenerateFromString(`let n=parseFunc(b,vars).varUsages();
+                                                        let nMin=parseFunc(a,vars).varUsages();
+                                                        n<=nMin`, "a", "b", "vars")),
+			Args:   3,
+			IsPure: true,
+		}.SetDescription("func a", "func b", "argList", "compares complexity of two functions"))
 		f.AddStaticFunction("cmpValues", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
                                                     let is=isExp.eval([]);
