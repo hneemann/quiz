@@ -17,7 +17,7 @@
     <input type="hidden" name="t" value="{{.Task.TID}}">
     {{$m := .}}
     {{range .Task.Input}}
-      <div>
+      <div class="input">
         {{if .Type }}
           <label for="input_{{.Id}}">{{markdownLine .Label}}</label><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$m.GetAnswer .Id}}">
         {{else}}

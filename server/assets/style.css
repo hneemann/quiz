@@ -91,3 +91,8 @@ div.task {
     border-width: 1px;
     border-color: darkgray;
 }
+
+div.input {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
