@@ -241,7 +241,8 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 					td.Answers[i.Id] = a
 				}
 			}
-			td.Result = task.Validate(td.Answers, false)
+			showResult := r.Form.Get("showResult") != ""
+			td.Result = task.Validate(td.Answers, showResult)
 		}
 
 		err = taskTemp.Execute(w, td)

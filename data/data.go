@@ -201,7 +201,7 @@ func cleanupError(err error) string {
 	return "Es ist ein Fehler aufgetreten!"
 }
 
-func (v *Validator) Validate(m value.Map, showResult bool) (bool, string) {
+func (v *Validator) Validate(m value.Map) (bool, string) {
 	if v.Expression == "" {
 		return true, ""
 	}
@@ -218,9 +218,6 @@ func (v *Validator) Validate(m value.Map, showResult bool) (bool, string) {
 		if r {
 			return true, ""
 		} else {
-			if showResult {
-				return false, v.Explanation
-			}
 			if v.Help == "" {
 				return false, DefaultMessage
 			}
@@ -235,8 +232,16 @@ func (v *Validator) Validate(m value.Map, showResult bool) (bool, string) {
 
 const DefaultMessage = "Das ist nicht richtig!"
 
-func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string, final bool) {
-	if ok, msg := v.Validate(m, final); !ok {
+func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string, showResult bool) {
+	if ok, msg := v.Validate(m); !ok {
+		if showResult {
+			if v.Explanation != "" {
+				if msg != "" {
+					msg += "\n\n"
+				}
+				msg += "Lösung:\n\n" + v.Explanation
+			}
+		}
 		result[id] = msg
 	}
 }

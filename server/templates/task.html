@@ -32,7 +32,8 @@
     <div class="result">{{markdown (.GetResult "_task_") }}</div>
     {{end}}
     <p>
-    <input type="submit" value="Absenden">
+    <input type="submit" value="Prüfen">
+    <input type="submit" value="Lösung" name="showResult">
     </p>
   </form>
   <a href="/chapter/?l={{.Task.LID}}&c={{.Task.CID}}">Zurück</a>

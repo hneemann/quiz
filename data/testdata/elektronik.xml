@@ -84,6 +84,8 @@ Welchen Wert hat der Exponentialterm bei $U_D=0.5V$ und $U_T=25mV$?</Question>
                 <Label>Wert:</Label>
                 <Validator>
                     <Expression>cmpValues(4.58e8,a.val,5)</Expression>
+                    <Help>Der Wert ist sehr, sehr groß!</Help>
+                    <Explanation>Der Wert beträgt $4.58 \cdot 10^8$.</Explanation>
                 </Validator>
             </Input>
         </Task>
@@ -97,6 +99,8 @@ Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5
                 <Label>$I_D=$</Label>
                 <Validator>
                     <Expression>cmpFunc("I_S*exp(U_D/U_T)",a.func,["I_S","U_D","U_T"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
+                    <Help>Überlegen Sie sich, welchen Summanden man vernachlässigen kann.</Help>
+                    <Explanation>Die Näherung lautet $I_D=I_S e^{\frac{U_D}{U_T}}$.</Explanation>
                 </Validator>
             </Input>
         </Task>
