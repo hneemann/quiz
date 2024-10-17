@@ -16,18 +16,22 @@
     <input type="hidden" name="c" value="{{.Task.CID}}">
     <input type="hidden" name="t" value="{{.Task.TID}}">
     {{$m := .}}
+    <table>
     {{range .Task.Input}}
-      <div class="input">
+      <tr>
         {{if .Type }}
-          <label for="input_{{.Id}}">{{markdownLine .Label $m.Task.LID}}</label><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$m.GetAnswer .Id}}">
+          <td style="text-align:right;"><label for="input_{{.Id}}">{{markdownLine .Label $m.Task.LID}}</label></td>
+          <td style="text-align:left;"><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$m.GetAnswer .Id}}"></td>
         {{else}}
-          <input style="margin-right:1em;" type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}><label for="input_{{.Id}}">{{markdownLine .Label $m.Task.LID}}</label>
+          <td style="text-align:right;"><input style="margin-right:1em;" type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}></td>
+          <td style="text-align:left;"><label for="input_{{.Id}}">{{markdownLine .Label $m.Task.LID}}</label></td>
         {{end}}
+      </tr>
         {{if $m.GetResult .Id}}
-        <div class="result">{{markdown ($m.GetResult .Id) $m.Task.LID}}</div>
+        <tr class="result"><td colspan="2" class="result"><div class="result">{{markdownLine ($m.GetResult .Id) $m.Task.LID}}</div></td></tr>
         {{end}}
-      </div>
     {{end}}
+    <table>
     {{if .GetResult "_task_"}}
     <div class="result">{{markdown (.GetResult "_task_") .Task.LID}}</div>
     {{end}}

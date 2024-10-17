@@ -62,15 +62,20 @@ div.lecture {
     border-color: darkgray;
 }
 
+tr.result {
+}
+td.result {
+    padding-bottom: 1em;
+}
 div.result {
     background-color: #ffc0c0;
-    margin: 1em 0;
-    padding: 0.2em;
     border-radius: 0.5em;
     border-style: solid;
     border-width: 1px;
     border-color: darkgray;
+    padding: 0.5em;
 }
+
 div.correct {
     background-color: lightgreen;
     margin: 1em 0;
@@ -102,6 +107,8 @@ img {
     border-style: solid;
     border-width: 1px;
     border-color: darkgray;
+    margin-left: auto;
+    margin-right: auto;
     padding: 0.5em;
     max-width: 70%;
     height: auto;
