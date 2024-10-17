@@ -16,12 +16,13 @@ func ReadLectures(folder string) (Lectures, error) {
 		if f.IsDir() {
 			continue
 		}
-		lecture, err := readFile(filepath.Join(folder, f.Name()))
-		lecture.filename = f.Name()
-		if err != nil {
-			return nil, err
+		if filepath.Ext(f.Name()) == ".xml" {
+			lecture, err := readFile(filepath.Join(folder, f.Name()))
+			if err != nil {
+				return nil, err
+			}
+			lectures = append(lectures, lecture)
 		}
-		lectures = append(lectures, lecture)
 	}
 	err = lectures.Init()
 	if err != nil {
@@ -40,5 +41,6 @@ func readFile(filename string) (*Lecture, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing file %s: %w", filename, err)
 	}
+	lecture.filename = filename
 	return lecture, nil
 }

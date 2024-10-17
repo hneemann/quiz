@@ -9,6 +9,8 @@ import (
 	"github.com/hneemann/parser2/value"
 	"io"
 	"math"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -106,6 +108,11 @@ type Lecture struct {
 
 func (l *Lecture) LID() int {
 	return l.lid
+}
+
+func (l *Lecture) GetFile(name string) ([]byte, error) {
+	f := path.Join(path.Dir(l.filename), name)
+	return os.ReadFile(f)
 }
 
 type Lectures []*Lecture

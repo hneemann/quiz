@@ -39,7 +39,7 @@ func main() {
 	mux.Handle("/lecture/", server.CreateLecture(lectures))
 	mux.Handle("/chapter/", server.CreateChapter(lectures))
 	mux.Handle("/task/", server.CreateTask(lectures))
-	mux.Handle("/submit/", server.CreateTask(lectures))
+	mux.Handle("/image/", server.CreateImages(lectures))
 
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}
 

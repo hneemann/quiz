@@ -14,7 +14,7 @@
     <a href="/lecture/?l={{.LID}}">
     <div class="lecture">
       <h2>{{.Name}}</h2>
-      <p>{{.Description}}</p>
+      <p>{{markdown .Description .LID}}</p>
     </div>
     </a>
   {{end}}

@@ -112,6 +112,32 @@ Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5
                 </Validator>
             </Input>
         </Task>
+        <Task>
+            <Name>Einfacher Stromkreis</Name>
+            <Question>
+Eine Diode des Typs 1N4148 mit der gegebenen Kennlinie sei mit einem Serienwiderstand $R=10\Omega$ an
+eine Spannungsquelle mit $U=2V$ angeschlossen.
+
+1. Wie groß kann der Diodenstrom $I_D$ bei Raumtemperatur maximal werden?
+2. Wie groß kann $I_D$ bei $175^o C$ werden?
+
+![Kennlinie](Kennlinie.png)
+         </Question>
+            <Input id="raum" type="text">
+                <Label>Raumtemperatur: $I_D/A=$</Label>
+                <Validator>
+                    <Expression>cmpValues(0.11,a.raum,5)</Expression>
+                    <Explanation>Es ergibt sich etwa $I_D=0.11mA$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="T175" type="text">
+                <Label>Bei $175^o C$: $I_D/A=$</Label>
+                <Validator>
+                    <Expression>cmpValues(0.125,a.T175,5)</Expression>
+                    <Explanation>Es ergibt sich etwa $I_D=0.125mA$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
     </Chapter>
 
 </Lecture>

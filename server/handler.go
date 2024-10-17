@@ -12,8 +12,11 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -47,11 +50,11 @@ var funcMap = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
-	"markdown":     func(raw string) template.HTML { return fromMarkdown(raw, false) },
-	"markdownLine": func(raw string) template.HTML { return fromMarkdown(raw, true) },
+	"markdown":     func(raw string, LId int) template.HTML { return fromMarkdown(raw, false, LId) },
+	"markdownLine": func(raw string, LId int) template.HTML { return fromMarkdown(raw, true, LId) },
 }
 
-func fromMarkdown(raw string, skipParagraph bool) template.HTML {
+func fromMarkdown(raw string, skipParagraph bool, LId int) template.HTML {
 	// create Markdown parser with extensions
 	extensions := parser.CommonExtensions |
 		parser.AutoHeadingIDs |
@@ -62,24 +65,34 @@ func fromMarkdown(raw string, skipParagraph bool) template.HTML {
 
 	// create HTML renderer with extensions
 	htmlFlags := html.CommonFlags | html.HrefTargetBlank
-	opts := html.RendererOptions{Flags: htmlFlags, RenderNodeHook: createRenderHook(skipParagraph)}
+	opts := html.RendererOptions{Flags: htmlFlags, RenderNodeHook: createRenderHook(skipParagraph, LId)}
 	renderer := html.NewRenderer(opts)
 
 	return template.HTML(markdown.Render(doc, renderer))
 }
 
-func createRenderHook(skipParagraph bool) html.RenderNodeFunc {
+func createRenderHook(skipParagraph bool, LId int) html.RenderNodeFunc {
 	return func(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool) {
-		if _, ok := node.(*ast.Paragraph); ok && skipParagraph {
+		switch n := node.(type) {
+		case *ast.Paragraph:
+			if skipParagraph {
+				return ast.GoToNext, true
+			}
+		case *ast.Math:
+			doMath(w, n.Literal, false)
 			return ast.GoToNext, true
-		} else if m, ok := node.(*ast.Math); ok {
-			doMath(w, m.Literal, false)
-			return ast.GoToNext, true
-		} else if m, ok := node.(*ast.MathBlock); ok {
+		case *ast.MathBlock:
 			if entering {
-				doMath(w, m.Literal, true)
+				doMath(w, n.Literal, true)
 			}
 			return ast.GoToNext, true
+		case *ast.Image:
+			if entering {
+				name := string(n.Destination)
+				url := "/image/" + strconv.Itoa(LId) + "/" + name
+				n.Destination = []byte(url)
+			}
+			return ast.GoToNext, false
 		}
 		return ast.GoToNext, false
 	}
@@ -257,5 +270,29 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 		if err != nil {
 			log.Println(err)
 		}
+	})
+}
+
+func CreateImages(lectures data.Lectures) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		url := r.URL.Path
+		file := path.Base(url)
+		l, err := strconv.Atoi(path.Base(path.Dir(url)))
+		if err != nil || l < 0 || l >= len(lectures) {
+			http.Error(w, "invalid lecture number", http.StatusBadRequest)
+			return
+		}
+		lecture := lectures[l]
+		data, err := lecture.GetFile(file)
+		if err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+
+		ctype := mime.TypeByExtension(filepath.Ext(file))
+		if ctype != "" {
+			w.Header().Set("Content-Type", ctype)
+		}
+		w.Write(data)
 	})
 }
