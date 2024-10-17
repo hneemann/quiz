@@ -9,7 +9,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	f, err := os.Open("testdata/Quiz.xml")
+	f, err := os.Open("testdata/elektronik.xml")
 	assert.NoError(t, err)
 
 	lecture, err := New(f)
@@ -27,7 +27,7 @@ func TestNew(t *testing.T) {
 	result := task1.Validate(input, false)
 
 	assert.Equal(t, 3, len(result))
-	assert.True(t, strings.Contains(result["Task"], "gleichzeitig"))
+	assert.True(t, strings.Contains(result["_task_"], "gleichzeitig"))
 	assert.EqualValues(t, DefaultMessage, result["drei"])
 	assert.EqualValues(t, DefaultMessage, result["linear"])
 
@@ -39,24 +39,27 @@ func TestNew(t *testing.T) {
 	input["nlinear"] = true
 
 	result = task1.Validate(input, false)
-	assert.Equal(t, 0, len(result))
+	assert.Equal(t, 1, len(result))
+	assert.EqualValues(t, "Richtig!", result["_task_"])
 
-	task2 := lecture.Chapter[0].Task[1]
+	task2 := lecture.Chapter[0].Task[3]
 	input = make(DataMap)
-	input["func"] = "3*x^2+2"
+	input["func"] = "I_S*exp(U_D/U_T)"
 	result = task2.Validate(input, false)
-	assert.Equal(t, 0, len(result))
+	assert.Equal(t, 1, len(result))
+	assert.EqualValues(t, "Richtig!", result["_task_"])
 
 	input = make(DataMap)
-	input["func"] = "2+x^2*3"
+	input["func"] = "exp(U_D/U_T)*I_S"
 	result = task2.Validate(input, false)
-	assert.Equal(t, 0, len(result))
+	assert.Equal(t, 1, len(result))
+	assert.EqualValues(t, "Richtig!", result["_task_"])
 
 	input = make(DataMap)
 	input["func"] = "3*x^2+1"
 	result = task2.Validate(input, false)
 	assert.Equal(t, 1, len(result))
-
+	assert.EqualValues(t, "", result["_task_"])
 }
 
 func TestParser(t *testing.T) {

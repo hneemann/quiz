@@ -144,7 +144,7 @@ func (t *Tokenizer) readToken() Token {
 			return Token{kind: Ampersand, value: "&"}
 		case unicode.IsNumber(r):
 			var value string
-			for r := t.Peek(); unicode.IsNumber(r); r = t.Peek() {
+			for r := t.Peek(); unicode.IsNumber(r) || r == '.'; r = t.Peek() {
 				value += string(t.Read())
 			}
 			return Token{kind: Number, value: value}

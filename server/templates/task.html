@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>{{.Task.Name}}</title>
+  <link rel="icon" type="image/svg" href="/assets/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body>
+
+  <h2>{{.Task.Name}}</h2>
+  {{markdown .Task.Question}}
+
+  <form action="." method="post">
+    <input type="hidden" name="l" value="{{.Task.LID}}">
+    <input type="hidden" name="c" value="{{.Task.CID}}">
+    <input type="hidden" name="t" value="{{.Task.TID}}">
+    {{$m := .}}
+    {{range .Task.Input}}
+      <div>
+        {{if .Type }}
+          <label for="input_{{.Id}}">{{markdownLine .Label}}</label><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$m.GetAnswer .Id}}">
+        {{else}}
+          <input type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}><label for="input_{{.Id}}">{{markdownLine .Label}}</label>
+        {{end}}
+        {{if $m.GetResult .Id}}
+        <div class="result">{{markdown ($m.GetResult .Id)}}</div>
+        {{end}}
+      </div>
+    {{end}}
+    {{if .GetResult "_task_"}}
+    <div class="result">{{markdown (.GetResult "_task_") }}</div>
+    {{end}}
+    <p>
+    <input type="submit" value="Absenden">
+    </p>
+  </form>
+  <a href="/chapter/?l={{.Task.LID}}&c={{.Task.CID}}">Zurück</a>
+</body>
+</html>

@@ -3,6 +3,7 @@ module github.com/hneemann/quiz
 go 1.23
 
 require (
+	github.com/gomarkdown/markdown v0.0.0-20240930133441-72d49d9543d8
 	github.com/hneemann/parser2 v0.0.0-20240921145341-890fd8cf609a
 	github.com/stretchr/testify v1.9.0
 )

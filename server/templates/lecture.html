@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>{{.Name}}</title>
+  <link rel="icon" type="image/svg" href="/assets/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body>
+
+  <h2>{{.Name}}</h2>
+  {{markdown .Description}}
+
+  {{range .Chapter}}
+    <div class="chapter">
+      <h2>{{.Name}}</h2>
+      {{markdown .Description}}
+      <a href="/chapter/?l={{.LID}}&c={{.CID}}">Start</a>
+    </div>
+  {{end}}
+
+  <p><a href="/">Zurück</a></p>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>{{.Name}}</title>
+  <link rel="icon" type="image/svg" href="/assets/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body>
+
+  <h2>{{.Name}}</h2>
+  {{markdown .Description}}
+
+  <h3>Aufgaben</h3>
+  <ol>
+    {{range .Task}}
+       <li><a href="/task/?l={{.LID}}&c={{.CID}}&t={{.TID}}">{{.Name}}</a></li>
+    {{end}}
+  </ol>
+
+ <a href="/lecture/?l={{.LID}}">Zurück</a>
+</body>
+</html>

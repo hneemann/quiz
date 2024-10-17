@@ -1,0 +1,105 @@
+<Lecture>
+    <Name>Elektronik 1</Name>
+    <Description>In diesem Quiz werden Fragen zur Elektronik 1 gestellt.</Description>
+    <Chapter>
+        <Name>Die Diode</Name>
+        <Description>Hier geht es um die Eigenschaften der Diode.</Description>
+        <Task>
+            <Name>Allgemein</Name>
+            <Question>Eine Diode ...</Question>
+            <Input id="elBau" type="checkbox">
+                <Label>ist ein elektronisches Bauteil.</Label>
+                <Validator>
+                    <Expression>a.elBau</Expression>
+                    <Test outcome="true"/>
+                </Validator>
+            </Input>
+            <Input id="zwei" type="checkbox">
+                <Label>hat zwei Anschlüsse</Label>
+                <Validator>
+                    <Expression>a.zwei</Expression>
+                </Validator>
+            </Input>
+            <Input id="drei" type="checkbox">
+                <Label>hat drei Anschlüsse</Label>
+                <Validator>
+                    <Expression>!a.drei</Expression>
+                </Validator>
+            </Input>
+            <Input id="linear" type="checkbox">
+                <Label>zeigt lineares Verhalten.</Label>
+                <Validator>
+                    <Expression>!a.linear</Expression>
+                </Validator>
+            </Input>
+            <Input id="nlinear" type="checkbox">
+                <Label>zeigt nicht lineares Verhalten.</Label>
+                <Validator>
+                    <Expression>a.nlinear</Expression>
+                </Validator>
+            </Input>
+            <Validator>
+                <Expression>
+                    if a.nlinear and a.linear
+                    then "Wie kann eine Diode gleichzeitig linear und nicht linear sein?"
+                    else true
+                </Expression>
+            </Validator>
+        </Task>
+        <Task>
+            <Name>Diodengleichung</Name>
+            <Question>Wie lautet die Diodengleichung?</Question>
+            <Input id="dg1" type="checkbox">
+                <Label>$I_D=I_S e^{\frac{U_D}{U_T}}$</Label>
+                <Validator>
+                    <Expression>!a.dg1</Expression>
+                </Validator>
+            </Input>
+            <Input id="dg2" type="checkbox">
+                <Label>$I_D=I_S (e^{\frac{U_D}{U_T}}-1)$</Label>
+                <Validator>
+                    <Expression>a.dg2</Expression>
+                </Validator>
+            </Input>
+            <Input id="dg3" type="checkbox">
+                <Label>$I_D=I_S (e^{\frac{U_D}{U_T}}+1)$</Label>
+                <Validator>
+                    <Expression>!a.dg3</Expression>
+                </Validator>
+            </Input>
+            <Input id="dg4" type="checkbox">
+                <Label>$I_D=I_S (e^{\frac{e U_D}{k_B T}}-1)$</Label>
+                <Validator>
+                    <Expression>a.dg4</Expression>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Name>Durchlassbereich</Name>
+            <Question>
+Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$.
+
+Welchen Wert hat der Exponentialterm bei $U_D=0.5V$ und $U_T=25mV$?</Question>
+            <Input id="val" type="text">
+                <Label>Wert:</Label>
+                <Validator>
+                    <Expression>cmpValues(4.58e8,a.val,5)</Expression>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Name>Näherung im Durchlassbereich</Name>
+            <Question>
+Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$.
+
+Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5V$) aussehen?</Question>
+            <Input id="func" type="text">
+                <Label>$I_D=$</Label>
+                <Validator>
+                    <Expression>cmpFunc("I_S*exp(U_D/U_T)",a.func,["I_S","U_D","U_T"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
+                </Validator>
+            </Input>
+        </Task>
+    </Chapter>
+
+</Lecture>

@@ -1,0 +1,28 @@
+math {
+    font-size: 120%;
+}
+
+div.chapter {
+    background-color: lightblue;
+    margin: 1em 0;
+    padding: 1em 1em;
+    border-radius: 1em;
+    border-style: solid;
+    border-width: 1px;
+    border-color: darkgray;
+}
+
+div.lecture {
+    background-color: lightblue;
+    margin: 1em 0;
+    padding: 1em;
+    border-radius: 1em;
+    border-style: solid;
+    border-width: 1px;
+    border-color: darkgray;
+}
+
+div.result {
+    font-weight: bold;
+    color: indianred;
+}

@@ -16,9 +16,9 @@ import (
 type InputType int
 
 const (
-	Text InputType = iota
+	Checkbox InputType = iota
+	Text
 	Number
-	Checkbox
 )
 
 func (it *InputType) UnmarshalText(text []byte) error {
@@ -60,21 +60,83 @@ type Input struct {
 }
 
 type Task struct {
+	lid       int
+	cid       int
+	tid       int
+	Name      string
 	Question  string
 	Input     []Input
 	Validator Validator
 }
 
+func (t *Task) LID() int {
+	return t.lid
+}
+
+func (t *Task) CID() int {
+	return t.cid
+}
+func (t *Task) TID() int {
+	return t.tid
+}
+
 type Chapter struct {
+	lid         int
+	cid         int
 	Name        string
 	Description string
-	Task        []Task
+	Task        []*Task
+}
+
+func (c *Chapter) LID() int {
+	return c.lid
+}
+
+func (c *Chapter) CID() int {
+	return c.cid
 }
 
 type Lecture struct {
+	lid         int
+	filename    string
 	Name        string
 	Description string
-	Chapter     []Chapter
+	Chapter     []*Chapter
+}
+
+func (l *Lecture) LID() int {
+	return l.lid
+}
+
+type Lectures []*Lecture
+
+func (l Lectures) Init() error {
+	for lid, lecture := range l {
+		lecture.lid = lid
+		for cid, chapter := range lecture.Chapter {
+			chapter.lid = lid
+			chapter.cid = cid
+			for tid, task := range chapter.Task {
+				task.lid = lid
+				task.cid = cid
+				task.tid = tid
+				m := make(map[string]struct{})
+				for _, i := range task.Input {
+					if _, ok := m[i.Id]; ok {
+						return fmt.Errorf("%s: duplicate input id %s in chapter %s task %s", lecture.filename, i.Id, chapter.Name, task.Name)
+					}
+					m[i.Id] = struct{}{}
+
+					err := i.Validator.test()
+					if err != nil {
+						return fmt.Errorf("%s: test failed in input id %s in chapter %s task %s: %w", lecture.filename, i.Id, chapter.Name, task.Name, err)
+					}
+				}
+
+			}
+		}
+	}
+	return nil
 }
 
 func New(r io.Reader) (*Lecture, error) {
@@ -125,17 +187,31 @@ func (d DataMap) Size() int {
 	return len(d)
 }
 
+func cleanupError(err error) string {
+	var nf parser2.NotFoundError
+	if errors.As(err, &nf) {
+		return fmt.Sprintf("'%s' kann nicht verwendet werden!", nf.NotFound())
+	}
+
+	var gui GuiError
+	if errors.As(err, &gui) {
+		return gui.message
+	}
+
+	return "Es ist ein Fehler aufgetreten!"
+}
+
 func (v *Validator) Validate(m value.Map, showResult bool) (bool, string) {
 	if v.Expression == "" {
 		return true, ""
 	}
 	f, err := myParser.Generate(v.Expression, "a")
 	if err != nil {
-		return false, err.Error()
+		return false, cleanupError(err)
 	}
 	r, err := f.Eval(m)
 	if err != nil {
-		return false, err.Error()
+		return false, cleanupError(err)
 	}
 	switch r := r.(type) {
 	case value.Bool:
@@ -145,7 +221,10 @@ func (v *Validator) Validate(m value.Map, showResult bool) (bool, string) {
 			if showResult {
 				return false, v.Explanation
 			}
-			return false, v.Help
+			if v.Help == "" {
+				return false, DefaultMessage
+			}
+			return false, DefaultMessage + "\n\nHinweis: " + v.Help
 		}
 	case value.String:
 		return false, string(r)
@@ -158,20 +237,26 @@ const DefaultMessage = "Das ist nicht richtig!"
 
 func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string, final bool) {
 	if ok, msg := v.Validate(m, final); !ok {
-		if msg == "" {
-			msg = DefaultMessage
-		}
 		result[id] = msg
 	}
+}
+
+func (v *Validator) test() error {
+	return nil
 }
 
 func (t *Task) Validate(input DataMap, showResult bool) map[string]string {
 	m := value.NewMap(input)
 	result := make(map[string]string)
-	t.Validator.ToResultMap(m, "Task", result, showResult)
+	t.Validator.ToResultMap(m, "_task_", result, showResult)
 	for _, i := range t.Input {
 		i.Validator.ToResultMap(m, i.Id, result, showResult)
 	}
+
+	if len(result) == 0 {
+		result["_task_"] = "Richtig!"
+	}
+
 	return result
 }
 
@@ -225,6 +310,19 @@ func (c *countVarUsageVisitor) Visit(ast parser2.AST) bool {
 	return true
 }
 
+type GuiError struct {
+	message string
+	cause   error
+}
+
+func (g GuiError) Error() string {
+	return g.message
+}
+
+func (g GuiError) Unwrap() error {
+	return g.cause
+}
+
 func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMap {
 	return value.MethodMap{
 		"eval": value.MethodAtType(1, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
@@ -243,7 +341,7 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 				}
 				r, err := e.fu.Eval(args...)
 				if err != nil {
-					return nil, checkNotFoundError(err, e.expression)
+					return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
 				}
 				return value.Float(r), nil
 			} else {
@@ -253,21 +351,13 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 		"varUsages": value.MethodAtType(0, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
 			ast, err := parser.Parse(e.expression)
 			if err != nil {
-				return nil, checkNotFoundError(err, e.expression)
+				return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
 			}
 			v := countVarUsageVisitor{}
 			ast.Traverse(&v)
 			return value.Int(v.n), nil
 		}),
 	}
-}
-
-func checkNotFoundError(err error, expression string) error {
-	var er parser2.NotFoundError
-	if errors.As(err, &er) {
-		return fmt.Errorf("'%s' nicht erwartet in '%s'", er.NotFound(), expression)
-	}
-	return fmt.Errorf("Der Ausdruck '%s' konnte nicht berechnet werden!", expression)
 }
 
 const ExpressionTypeId = 10
@@ -286,6 +376,14 @@ var myParser = value.New().
 			Args:   4,
 			IsPure: true,
 		}.SetDescription("func a", "func b", "argList", "values", "compares two functions"))
+		f.AddStaticFunction("cmpValues", funcGen.Function[value.Value]{
+			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
+                                                    let is=isExp.eval([]);
+                                                    let dif=abs(is-expected)/expected*100;
+                                                    dif<percent`, "expected", "isStr", "percent")),
+			Args:   3,
+			IsPure: true,
+		}.SetDescription("expected", "is", "percent", "compares two values"))
 
 		p := f.GetParser()
 		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(p))
@@ -295,6 +393,9 @@ var myParser = value.New().
 	funcGen.Function[value.Value]{
 		Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
 			if exp, ok := stack.Get(0).(value.String); ok {
+				if exp == "" {
+					return nil, GuiError{message: "Der Ausdruck ist leer!"}
+				}
 				if list, ok := stack.Get(1).(*value.List); ok {
 					args := []string{}
 					argValues, err := list.ToSlice(stack)
@@ -321,13 +422,12 @@ var myParser = value.New().
 	}.SetDescription("strFunc", "listOfArgs", "parse a function using the list of arguments"))
 
 func createExpression(expr string, args []string) (value.Value, error) {
+	if len(expr) == 0 {
+		return nil, fmt.Errorf("Der Ausdruck ist leer!")
+	}
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
-		var er parser2.NotFoundError
-		if errors.As(err, &er) {
-			return nil, fmt.Errorf("'%s' nicht erwartet in '%s'", er.NotFound(), expr)
-		}
-		return nil, fmt.Errorf("Der Ausdruck '%s' enthält Fehler!", expr)
+		return nil, GuiError{message: fmt.Sprintf("Der Ausdruck '%s' enthält Fehler!", expr), cause: err}
 	}
 	return Expression{expression: expr, fu: fu}, nil
 }
