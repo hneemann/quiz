@@ -15,7 +15,7 @@
                         then
                              if cmpFuncCplx("c/a",a.func1,["a","b","c","d"])
                              then true
-                             else "Der Ausdruck ist korrekt, aber nicht vollständig vereinfacht!"
+                             else "Der Ausdruck ist zwar korrekt, aber nicht vollständig vereinfacht!"
                         else "Der Ausdruck ist nicht korrekt!"
                     </Expression>
                     <Explanation>Die Vereinfachung lautet $c/a$.</Explanation>
@@ -29,7 +29,7 @@
                         then
                            if cmpFuncCplx("1",a.func2,["Z_1","Z_2","Z_3"])
                            then true
-                           else "Der Ausdruck ist korrekt, aber nicht vollständig vereinfacht!"
+                           else "Der Ausdruck ist zwar korrekt, aber nicht vollständig vereinfacht!"
                         else "Der Ausdruck ist nicht korrekt!"
                     </Expression>
                     <Explanation>Die Vereinfachung lautet $1$.</Explanation>
