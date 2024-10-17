@@ -258,10 +258,6 @@ func (t *Task) Validate(input DataMap, showResult bool) map[string]string {
 		i.Validator.ToResultMap(m, i.Id, result, showResult)
 	}
 
-	if len(result) == 0 {
-		result["_task_"] = "Richtig!"
-	}
-
 	return result
 }
 

@@ -7,18 +7,20 @@
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
 <body>
-
+  <div class="main">
   <h2>{{.Name}}</h2>
   {{markdown .Description}}
 
   {{range .Chapter}}
     <div class="chapter">
+      <a href="/chapter/?l={{.LID}}&c={{.CID}}">
       <h2>{{.Name}}</h2>
       {{markdown .Description}}
-      <a href="/chapter/?l={{.LID}}&c={{.CID}}">Start</a>
+      </a>
     </div>
   {{end}}
 
-  <p><a href="/">Zurück</a></p>
+  <p><a class="nav" href="/">Zurück</a></p>
+</div>
 </body>
 </html>

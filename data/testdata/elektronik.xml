@@ -77,13 +77,21 @@
         <Task>
             <Name>Durchlassbereich</Name>
             <Question>
-Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$.
+Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$. Wir wollen uns ansehen, welches Verhalten diese
+Gleichung im Durchlassbereich ($U_D>0$) zeigt.
 
-Welchen Wert hat der Exponentialterm bei $U_D=0.5V$ und $U_T=25mV$?</Question>
-            <Input id="val" type="text">
-                <Label>Wert:</Label>
+Welchen Wert hat der Exponentialterm im Durchlassbereich bei Raumtemperatur ($U_T\approx 25mV$)?</Question>
+            <Input id="val1" type="text">
+                <Label>Bei $U_D=0.2V$:</Label>
                 <Validator>
-                    <Expression>cmpValues(4.58e8,a.val,5)</Expression>
+                    <Expression>cmpValues(2980,a.val1,5)</Expression>
+                    <Explanation>Der Wert beträgt $2980$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="val2" type="text">
+                <Label>Bei $U_D=0.5V$:</Label>
+                <Validator>
+                    <Expression>cmpValues(4.58e8,a.val2,5)</Expression>
                     <Help>Der Wert ist sehr, sehr groß!</Help>
                     <Explanation>Der Wert beträgt $4.58 \cdot 10^8$.</Explanation>
                 </Validator>

@@ -8,16 +8,17 @@
 </head>
 <body>
 
+  <div class="main">
+
   <h2>{{.Name}}</h2>
   {{markdown .Description}}
 
   <h3>Aufgaben</h3>
-  <ol>
-    {{range .Task}}
-       <li><a href="/task/?l={{.LID}}&c={{.CID}}&t={{.TID}}">{{.Name}}</a></li>
-    {{end}}
-  </ol>
+  {{range .Task}}
+     <a href="/task/?l={{.LID}}&c={{.CID}}&t={{.TID}}"><div class="task">{{.Name}}</div></a>
+  {{end}}
 
- <a href="/lecture/?l={{.LID}}">Zurück</a>
+ <a class="nav" href="/lecture/?l={{.LID}}">Zurück</a>
+</div>
 </body>
 </html>

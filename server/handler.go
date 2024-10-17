@@ -180,6 +180,8 @@ type taskData struct {
 	Task    *data.Task
 	Answers data.DataMap
 	Result  map[string]string
+	Next    string
+	Ok      bool
 }
 
 func (td taskData) GetAnswer(id string) string {
@@ -243,6 +245,12 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 			}
 			showResult := r.Form.Get("showResult") != ""
 			td.Result = task.Validate(td.Answers, showResult)
+			if len(td.Result) == 0 {
+				td.Ok = true
+			}
+		}
+		if t < len(chapter.Task)-1 {
+			td.Next = fmt.Sprintf("/task?l=%d&c=%d&t=%d", l, c, t+1)
 		}
 
 		err = taskTemp.Execute(w, td)

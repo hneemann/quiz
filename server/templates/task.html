@@ -7,7 +7,7 @@
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
 <body>
-
+  <div class="main">
   <h2>{{.Task.Name}}</h2>
   {{markdown .Task.Question}}
 
@@ -21,7 +21,7 @@
         {{if .Type }}
           <label for="input_{{.Id}}">{{markdownLine .Label}}</label><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$m.GetAnswer .Id}}">
         {{else}}
-          <input type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}><label for="input_{{.Id}}">{{markdownLine .Label}}</label>
+          <input style="margin-right:1em;" type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}><label for="input_{{.Id}}">{{markdownLine .Label}}</label>
         {{end}}
         {{if $m.GetResult .Id}}
         <div class="result">{{markdown ($m.GetResult .Id)}}</div>
@@ -31,11 +31,20 @@
     {{if .GetResult "_task_"}}
     <div class="result">{{markdown (.GetResult "_task_") }}</div>
     {{end}}
+    {{if .Ok}}
+    <div class="correct">Richtig!</div>
+    {{end}}
     <p>
     <input type="submit" value="Prüfen">
     <input type="submit" value="Lösung" name="showResult">
     </p>
   </form>
-  <a href="/chapter/?l={{.Task.LID}}&c={{.Task.CID}}">Zurück</a>
+  <p style="margin-top:2em;">
+  <a class="nav" href="/chapter/?l={{.Task.LID}}&c={{.Task.CID}}">Zurück</a>
+  {{if .Next}}
+  <a class="nav" href="{{.Next}}">Weiter</a>
+  {{end}}
+  </p>
+</div>
 </body>
 </html>

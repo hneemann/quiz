@@ -8,14 +8,17 @@
 </head>
 <body>
 
+  <div class="main">
   <h2>Vorlesungen</h2>
   {{range .}}
+    <a href="/lecture/?l={{.LID}}">
     <div class="lecture">
       <h2>{{.Name}}</h2>
       <p>{{.Description}}</p>
-      <a href="/lecture/?l={{.LID}}">Start</a>
     </div>
+    </a>
   {{end}}
+  </div>
 
 </body>
 </html>
