@@ -2,10 +2,10 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gomarkdown/markdown v0.0.0-20240930133441-72d49d9543d8 h1:4txT5G2kqVAKMjzidIabL/8KqjIK71yj30YOeuxLn10=
 github.com/gomarkdown/markdown v0.0.0-20240930133441-72d49d9543d8/go.mod h1:JDGcbDT52eL4fju3sZ4TeHGsQwhG9nbDV21aMyhwPoA=
-github.com/hneemann/iterator v0.0.0-20231215065112-39771e3d1f94 h1:TvYHodl7Xs0CgtOXA9o4W5pV3zkxRZu4DbZ/oolXvWU=
-github.com/hneemann/iterator v0.0.0-20231215065112-39771e3d1f94/go.mod h1:Y4LjHwBja9p9vaWnjpEzDorwPp/9UcDmycAJPX6WBEI=
-github.com/hneemann/parser2 v0.0.0-20240921145341-890fd8cf609a h1:INgphB1ghtQnMTRIklOIl3wFFXIc0v7BmX/74ALwB34=
-github.com/hneemann/parser2 v0.0.0-20240921145341-890fd8cf609a/go.mod h1:AMhR5wNnsvCW2NR716giBFFhmXCp26oP1IG3maRmgQg=
+github.com/hneemann/iterator v0.0.0-20240630073221-aab15310e28c h1:itki31EzEjJar/sQHUc1lXD9/vG0g72W8TPUx8wwC/M=
+github.com/hneemann/iterator v0.0.0-20240630073221-aab15310e28c/go.mod h1:Y4LjHwBja9p9vaWnjpEzDorwPp/9UcDmycAJPX6WBEI=
+github.com/hneemann/parser2 v0.0.0-20241018155607-1c687692fdb0 h1:r7gdCt9bjQGhdat46E6q3C1/fpW+ErMF2uvsNo1eqgA=
+github.com/hneemann/parser2 v0.0.0-20241018155607-1c687692fdb0/go.mod h1:SS7YsssqCfYO9w+HMtAff0UDfXqdjkq2rhElFNl7tZ4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
