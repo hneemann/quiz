@@ -40,7 +40,9 @@
     {{end}}
     <p>
     <input id="submit" type="submit" value="Prüfen">
+    {{if .ShowResultButton}}
     <input type="submit" value="Lösung" name="showResult">
+    {{end}}
     </p>
   </form>
   <p style="margin-top:2em;">

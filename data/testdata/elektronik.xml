@@ -31,7 +31,7 @@
         </Task>
         <Task>
             <Name>Diodengleichung</Name>
-            <Question>Wie lautet die Diodengleichung?</Question>
+            <Question>Wie lautet die Diodengleichung? Es sei $n=1$.</Question>
             <Input id="dg1" type="checkbox">
                 <Label>$I_D=I_S e^{\frac{U_D}{U_T}}$</Label>
                 <Validator>
@@ -60,7 +60,7 @@
         <Task>
             <Name>Durchlassbereich</Name>
             <Question>
-Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$. Wir wollen uns ansehen, welches Verhalten diese
+Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$. Es soll untersucht werden, welches Verhalten diese
 Gleichung im Durchlassbereich ($U_D>0$) zeigt.
 
 Welchen Wert hat der Exponentialterm im Durchlassbereich bei Raumtemperatur ($U_T\approx 25mV$)?</Question>
@@ -103,6 +103,8 @@ eine Spannungsquelle mit $U=2V$ angeschlossen.
 
 1. Wie groß kann der Diodenstrom $I_D$ bei Raumtemperatur maximal werden?
 2. Wie groß kann $I_D$ bei $175^o C$ werden?
+
+Die Abbildung zeigt die Kennlinie der Diode. Sie wurde aus dem Datenplatt der Diode entnommen.
 
 ![Kennlinie](Kennlinie.png)
          </Question>

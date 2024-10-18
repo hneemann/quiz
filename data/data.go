@@ -414,7 +414,7 @@ var myParser = value.New().
 		Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
 			if exp, ok := stack.Get(0).(value.String); ok {
 				if exp == "" {
-					return nil, GuiError{message: "Der Ausdruck ist leer!"}
+					return nil, GuiError{message: "Die Eingabe ist leer!"}
 				}
 				if list, ok := stack.Get(1).(*value.List); ok {
 					args := []string{}

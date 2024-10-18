@@ -193,12 +193,13 @@ func getNumber(r *http.Request, id string, max int) (int, error) {
 var taskTemp = Templates.Lookup("task.html")
 
 type taskData struct {
-	HasResult bool
-	Task      *data.Task
-	Answers   data.DataMap
-	Result    map[string]string
-	Next      string
-	Ok        bool
+	HasResult        bool
+	ShowResultButton bool
+	Task             *data.Task
+	Answers          data.DataMap
+	Result           map[string]string
+	Next             string
+	Ok               bool
 }
 
 func (td taskData) GetAnswer(id string) string {
