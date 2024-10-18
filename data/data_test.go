@@ -39,21 +39,18 @@ func TestNew(t *testing.T) {
 	input["nlinear"] = true
 
 	result = task1.Validate(input, false)
-	assert.Equal(t, 1, len(result))
-	assert.EqualValues(t, "Richtig!", result["_task_"])
+	assert.Equal(t, 0, len(result))
 
 	task2 := lecture.Chapter[0].Task[3]
 	input = make(DataMap)
-	input["func"] = "I_S*exp(U_D/U_T)"
+	input["func"] = "IS*exp(UD/UT)"
 	result = task2.Validate(input, false)
-	assert.Equal(t, 1, len(result))
-	assert.EqualValues(t, "Richtig!", result["_task_"])
+	assert.Equal(t, 0, len(result))
 
 	input = make(DataMap)
-	input["func"] = "exp(U_D/U_T)*I_S"
+	input["func"] = "exp(UD/UT)*IS"
 	result = task2.Validate(input, false)
-	assert.Equal(t, 1, len(result))
-	assert.EqualValues(t, "Richtig!", result["_task_"])
+	assert.Equal(t, 0, len(result))
 
 	input = make(DataMap)
 	input["func"] = "3*x^2+1"
