@@ -125,6 +125,7 @@ div.input {
 }
 
 img {
+    font-size: 100%;
     border-radius: 0.5em;
     border-style: solid;
     border-width: 1px;

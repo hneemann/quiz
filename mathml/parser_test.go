@@ -43,6 +43,7 @@ func TestParse(t *testing.T) {
 		{"\\left[x+1\\right]^2", "<msup><mrow><mo>[</mo><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mo>]</mo></mrow><mn>2</mn></msup>"},
 		{"\\left.x+1\\right|^2_0", "<msubsup><mrow><mrow><mi>x</mi><mo>+</mo><mn>1</mn></mrow><mo>|</mo></mrow><mn>0</mn><mn>2</mn></msubsup>"},
 		{"f'(x)=2x", "<mrow><mi>f</mi><mo>'</mo><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow><mo>=</mo><mn>2</mn><mi>x</mi></mrow>"},
+		{"I=1\\u{mA}", "<mrow><mi>I</mi><mo>=</mo><mn>1</mn><mo>mA</mo></mrow>"},
 	}
 
 	for _, test := range tests {

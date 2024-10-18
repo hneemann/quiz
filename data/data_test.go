@@ -9,7 +9,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	f, err := os.Open("testdata/elektronik.xml")
+	f, err := os.Open("testdata/elektronik/elektronik.xml")
 	assert.NoError(t, err)
 
 	lecture, err := New(f)
@@ -26,10 +26,8 @@ func TestNew(t *testing.T) {
 
 	result := task1.Validate(input, false)
 
-	assert.Equal(t, 3, len(result))
-	assert.True(t, strings.Contains(result["_task_"], "gleichzeitig"))
-	assert.EqualValues(t, DefaultMessage, result["drei"])
-	assert.EqualValues(t, DefaultMessage, result["linear"])
+	assert.Equal(t, 1, len(result))
+	assert.True(t, strings.Contains(result["_task_"], "nicht richtig"))
 
 	input = make(DataMap)
 	input["elBau"] = true

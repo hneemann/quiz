@@ -381,6 +381,8 @@ func (p *parser) ParseCommand(value string) Ast {
 		return Sqrt{p.ParseInBrace()}
 	case "vec":
 		return UnderOver{base: p.ParseInBrace(), over: addAttribute("mathsize", "75%", SimpleOperator("&rarr;"))}
+	case "u":
+		return SimpleNumber(p.ParsePlainInBrace())
 	case "table":
 		return p.parseTable()
 	case "overset":
@@ -537,5 +539,20 @@ func (p *parser) parseTableDef() []cellStyle {
 			complete = true
 			cs.align = center
 		}
+	}
+}
+
+func (p *parser) ParsePlainInBrace() string {
+	n := p.tok.NextToken()
+	if n.kind != OpenBrace {
+		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
+	}
+	var text string
+	for {
+		n = p.tok.NextToken()
+		if n.kind == CloseBrace || n.kind == EOF {
+			return text
+		}
+		text += n.value
 	}
 }

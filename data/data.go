@@ -9,8 +9,6 @@ import (
 	"github.com/hneemann/parser2/value"
 	"io"
 	"math"
-	"os"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -100,10 +98,10 @@ func (c *Chapter) CID() int {
 
 type Lecture struct {
 	lid         int
-	filename    string
 	Name        string
 	Description string
 	Chapter     []*Chapter
+	files       map[string][]byte
 }
 
 func (l *Lecture) LID() int {
@@ -111,8 +109,38 @@ func (l *Lecture) LID() int {
 }
 
 func (l *Lecture) GetFile(name string) ([]byte, error) {
-	f := path.Join(path.Dir(l.filename), name)
-	return os.ReadFile(f)
+	if l.files == nil {
+		return nil, fmt.Errorf("file '%s' not found", name)
+	}
+	if f, ok := l.files[name]; ok {
+		return f, nil
+	}
+	return nil, fmt.Errorf("file '%s' not found", name)
+}
+
+func (l *Lecture) Init() error {
+	for cid, chapter := range l.Chapter {
+		chapter.cid = cid
+		for tid, task := range chapter.Task {
+			task.cid = cid
+			task.tid = tid
+
+			m := make(map[string]struct{})
+			for _, i := range task.Input {
+				if _, ok := m[i.Id]; ok {
+					return fmt.Errorf("duplicate input id %s in chapter %s task %s", i.Id, chapter.Name, task.Name)
+				}
+				m[i.Id] = struct{}{}
+
+				err := i.Validator.test()
+				if err != nil {
+					return fmt.Errorf("test failed in input id %s in chapter %s task %s: %w", i.Id, chapter.Name, task.Name, err)
+				}
+			}
+
+		}
+	}
+	return nil
 }
 
 type Lectures []*Lecture
@@ -120,26 +148,10 @@ type Lectures []*Lecture
 func (l Lectures) Init() error {
 	for lid, lecture := range l {
 		lecture.lid = lid
-		for cid, chapter := range lecture.Chapter {
+		for _, chapter := range lecture.Chapter {
 			chapter.lid = lid
-			chapter.cid = cid
-			for tid, task := range chapter.Task {
+			for _, task := range chapter.Task {
 				task.lid = lid
-				task.cid = cid
-				task.tid = tid
-				m := make(map[string]struct{})
-				for _, i := range task.Input {
-					if _, ok := m[i.Id]; ok {
-						return fmt.Errorf("%s: duplicate input id %s in chapter %s task %s", lecture.filename, i.Id, chapter.Name, task.Name)
-					}
-					m[i.Id] = struct{}{}
-
-					err := i.Validator.test()
-					if err != nil {
-						return fmt.Errorf("%s: test failed in input id %s in chapter %s task %s: %w", lecture.filename, i.Id, chapter.Name, task.Name, err)
-					}
-				}
-
 			}
 		}
 	}
@@ -149,6 +161,10 @@ func (l Lectures) Init() error {
 func New(r io.Reader) (*Lecture, error) {
 	var l Lecture
 	err := xml.NewDecoder(r).Decode(&l)
+	if err != nil {
+		return nil, err
+	}
+	err = l.Init()
 	if err != nil {
 		return nil, err
 	}
