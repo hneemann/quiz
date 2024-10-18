@@ -106,7 +106,7 @@ Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5
             <Input id="func" type="text">
                 <Label>$I_D=$</Label>
                 <Validator>
-                    <Expression>cmpFunc("I_S*exp(U_D/U_T)",a.func,["I_S","U_D","U_T"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
+                    <Expression>cmpFunc("is*exp(ud/ut)",a.func.toLower(),["is","ud","ut"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
                     <Help>Überlegen Sie sich, welchen Summanden man vernachlässigen kann.</Help>
                     <Explanation>Die Näherung lautet $I_D=I_S e^{\frac{U_D}{U_T}}$.</Explanation>
                 </Validator>

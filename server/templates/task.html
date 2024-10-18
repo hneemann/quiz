@@ -5,9 +5,13 @@
   <title>{{.Task.Name}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
-  <script>document.getElementById("submit").scrollIntoView();</script>
+  <script>
+    function loaded() {
+      document.getElementById("submit").scrollIntoView();
+    }
+  </script>
 </head>
-<body>
+<body onload="loaded();">
   <div class="main">
   <h2>{{.Task.Name}}</h2>
   {{markdown .Task.Question .Task.LID}}

@@ -197,6 +197,9 @@ func (d DataMap) Size() int {
 func cleanupError(err error) string {
 	var nf parser2.NotFoundError
 	if errors.As(err, &nf) {
+		if len(nf.Avail()) > 0 {
+			return fmt.Sprintf("'%s' kann nicht verwendet werden! Verfügbare Variablen sind: %s", nf.NotFound(), strings.Join(nf.Avail(), ", "))
+		}
 		return fmt.Sprintf("'%s' kann nicht verwendet werden!", nf.NotFound())
 	}
 
