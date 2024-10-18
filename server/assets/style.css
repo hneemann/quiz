@@ -64,15 +64,25 @@ div.lecture {
 
 tr.result {
 }
-td.result {
+td.result-c1 {
+    text-align: right;
     padding-bottom: 1em;
+    padding-top: 1em;
 }
+
+td.result-c2 {
+    text-align: left;
+    padding-bottom: 1em;
+    padding-top: 1em;
+}
+
 div.result {
     background-color: #ffc0c0;
     border-radius: 0.5em;
     border-style: solid;
     border-width: 1px;
     border-color: darkgray;
+    margin-top: -1em ;
     padding: 0.5em;
 }
 

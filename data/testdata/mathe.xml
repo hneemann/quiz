@@ -25,14 +25,32 @@
                 <Label>$(1+\frac{Z_1}{Z_2})(\frac{Z_3}{Z_2}+1)-(Z_1+Z_3+\frac{Z_1Z_3}{Z_2})\frac{1}{Z_2}=$</Label>
                 <Validator>
                     <Expression>
-                        if cmpFunc("1",a.func2,["Z_1","Z_2","Z_3"],[[-2,1,3],[-1,3,4],[1,-2,-4]])
+                        let f=a.func2.toLower();
+                        let expected="1";
+                        if cmpFunc(expected,f,["z1","z2","z3"],[[-2,1,3],[-1,3,4],[1,-2,-4]])
                         then
-                           if cmpFuncCplx("1",a.func2,["Z_1","Z_2","Z_3"])
+                           if cmpFuncCplx(expected,f,["z1","z2","z3"])
                            then true
                            else "Der Ausdruck ist zwar korrekt, aber nicht vollständig vereinfacht!"
                         else "Der Ausdruck ist nicht korrekt!"
                     </Expression>
                     <Explanation>Die Vereinfachung lautet $1$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="func3" type="text">
+                <Label>$\frac{\ds{\frac{Z_1 - Z_1Z_3}{Z_1 + Z_2}}}{\ds{\frac{Z_2Z_3 - Z_2Z_3^2}{Z_1Z_3 + Z_2Z_3}}}=$</Label>
+                <Validator>
+                    <Expression>
+                        let f=a.func3.toLower();
+                        let expected="z1/z2";
+                        if cmpFunc(expected,f,["z1","z2","z3","z4"],[[-2,1,3,2],[-1,3,4,-1],[1,-2,-4,2]])
+                          then
+                          if cmpFuncCplx(expected,f,["z1","z2","z3","z4"])
+                          then true
+                          else "Der Ausdruck ist zwar korrekt, aber nicht vollständig vereinfacht!"
+                        else "Der Ausdruck ist nicht korrekt!"
+                    </Expression>
+                    <Explanation>Die Vereinfachung lautet $Z_1/Z_2$.</Explanation>
                 </Validator>
             </Input>
         </Task>

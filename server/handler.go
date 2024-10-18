@@ -112,7 +112,7 @@ func doMath(w io.Writer, latex []byte, block bool) {
 		} else {
 			w.Write([]byte("<math xmlns=\"&mathml;\">"))
 		}
-		a.ToMathMl(w)
+		a.ToMathMl(w, nil)
 		w.Write([]byte("</math>"))
 	}
 }
