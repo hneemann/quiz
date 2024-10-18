@@ -11,7 +11,7 @@ type parser struct {
 }
 
 type Ast interface {
-	ToMathMl(w io.Writer)
+	ToMathMl(w io.Writer, attr map[string]string)
 }
 
 type SimpleItem struct {
@@ -24,22 +24,20 @@ func (s SimpleItem) setFontSize(size string) SimpleItem {
 	return s
 }
 
-func (s SimpleItem) ToMathMl(w io.Writer) {
+func (s SimpleItem) ToMathMl(w io.Writer, attr map[string]string) {
 	switch s.tok.kind {
 	case Number:
-		s.write(w, "mn")
+		s.write(w, "mn", attr)
 	case Identifier:
-		s.write(w, "mi")
+		s.write(w, "mi", attr)
 	default:
-		s.write(w, "mo")
+		s.write(w, "mo", attr)
 	}
 }
-func (s SimpleItem) write(w io.Writer, tag string) {
-	write(w, "<", tag)
-	if s.fontsize != "" {
-		write(w, " mathsize=\"", s.fontsize, "\"")
-	}
-	write(w, ">", s.tok.value, "</", tag, ">")
+func (s SimpleItem) write(w io.Writer, t string, attr map[string]string) {
+	tag(w, t, attr, func(w io.Writer) {
+		write(w, s.tok.value)
+	})
 }
 
 func write(w io.Writer, s ...string) {
@@ -48,22 +46,36 @@ func write(w io.Writer, s ...string) {
 	}
 }
 
+func tag(w io.Writer, tag string, attr map[string]string, inner func(w io.Writer)) {
+	if attr == nil {
+		write(w, "<", tag, ">")
+	} else {
+		write(w, "<", tag)
+		for k, v := range attr {
+			write(w, " ", k, "=\"", v, "\"")
+		}
+		write(w, ">")
+	}
+	inner(w)
+	write(w, "</", tag, ">")
+}
+
 type Row struct {
 	items []Ast
 }
 
-func (f Row) ToMathMl(w io.Writer) {
-	write(w, "<mrow>")
-	for _, item := range f.items {
-		item.ToMathMl(w)
-	}
-	write(w, "</mrow>")
+func (f Row) ToMathMl(w io.Writer, attr map[string]string) {
+	tag(w, "mrow", attr, func(w io.Writer) {
+		for _, item := range f.items {
+			item.ToMathMl(w, nil)
+		}
+	})
 }
 
 type Empty struct {
 }
 
-func (e Empty) ToMathMl(io.Writer) {
+func (e Empty) ToMathMl(io.Writer, map[string]string) {
 }
 
 func NewRow(l ...Ast) Ast {
@@ -77,16 +89,33 @@ func NewRow(l ...Ast) Ast {
 	}
 }
 
+type AddAttribute struct {
+	inner Ast
+	attr  map[string]string
+}
+
+func (a AddAttribute) ToMathMl(w io.Writer, attr map[string]string) {
+	a.inner.ToMathMl(w, a.attr)
+}
+
+func addAttribute(key, value string, inner Ast) Ast {
+	if a, ok := inner.(AddAttribute); ok {
+		a.attr[key] = value
+		return a
+	}
+	return AddAttribute{inner: inner, attr: map[string]string{key: value}}
+}
+
 type Fraction struct {
 	top    Ast
 	bottom Ast
 }
 
-func (f Fraction) ToMathMl(w io.Writer) {
-	write(w, "<mfrac>")
-	f.top.ToMathMl(w)
-	f.bottom.ToMathMl(w)
-	write(w, "</mfrac>")
+func (f Fraction) ToMathMl(w io.Writer, attr map[string]string) {
+	tag(w, "mfrac", attr, func(w io.Writer) {
+		f.top.ToMathMl(w, nil)
+		f.bottom.ToMathMl(w, nil)
+	})
 }
 
 type Index struct {
@@ -95,26 +124,26 @@ type Index struct {
 	down Ast
 }
 
-func (i Index) ToMathMl(w io.Writer) {
+func (i Index) ToMathMl(w io.Writer, attr map[string]string) {
 	if i.up == nil {
-		write(w, "<msub>")
-		i.base.ToMathMl(w)
-		i.down.ToMathMl(w)
-		write(w, "</msub>")
+		tag(w, "msub", attr, func(w io.Writer) {
+			i.base.ToMathMl(w, nil)
+			i.down.ToMathMl(w, nil)
+		})
 		return
 	}
 	if i.down == nil {
-		write(w, "<msup>")
-		i.base.ToMathMl(w)
-		i.up.ToMathMl(w)
-		write(w, "</msup>")
+		tag(w, "msup", attr, func(w io.Writer) {
+			i.base.ToMathMl(w, nil)
+			i.up.ToMathMl(w, nil)
+		})
 		return
 	}
-	write(w, "<msubsup>")
-	i.base.ToMathMl(w)
-	i.down.ToMathMl(w)
-	i.up.ToMathMl(w)
-	write(w, "</msubsup>")
+	tag(w, "msubsup", attr, func(w io.Writer) {
+		i.base.ToMathMl(w, nil)
+		i.down.ToMathMl(w, nil)
+		i.up.ToMathMl(w, nil)
+	})
 }
 
 func NewIndex(base Ast, up Ast, down Ast) Ast {
@@ -130,36 +159,36 @@ type UnderOver struct {
 	under Ast
 }
 
-func (o UnderOver) ToMathMl(w io.Writer) {
+func (o UnderOver) ToMathMl(w io.Writer, attr map[string]string) {
 	if o.over == nil {
-		write(w, "<munder>")
-		o.base.ToMathMl(w)
-		o.under.ToMathMl(w)
-		write(w, "</munder>")
+		tag(w, "munder", attr, func(w io.Writer) {
+			o.base.ToMathMl(w, nil)
+			o.under.ToMathMl(w, nil)
+		})
 		return
 	}
 	if o.under == nil {
-		write(w, "<mover>")
-		o.base.ToMathMl(w)
-		o.over.ToMathMl(w)
-		write(w, "</mover>")
+		tag(w, "mover", attr, func(w io.Writer) {
+			o.base.ToMathMl(w, nil)
+			o.over.ToMathMl(w, nil)
+		})
 		return
 	}
-	write(w, "<munderover>")
-	o.base.ToMathMl(w)
-	o.under.ToMathMl(w)
-	o.over.ToMathMl(w)
-	write(w, "</munderover>")
+	tag(w, "munderover", attr, func(w io.Writer) {
+		o.base.ToMathMl(w, nil)
+		o.under.ToMathMl(w, nil)
+		o.over.ToMathMl(w, nil)
+	})
 }
 
 type Sqrt struct {
 	inner Ast
 }
 
-func (s Sqrt) ToMathMl(w io.Writer) {
-	write(w, "<msqrt>")
-	s.inner.ToMathMl(w)
-	write(w, "</msqrt>")
+func (s Sqrt) ToMathMl(w io.Writer, attr map[string]string) {
+	tag(w, "msqrt", attr, func(w io.Writer) {
+		s.inner.ToMathMl(w, nil)
+	})
 }
 
 type align int
@@ -198,35 +227,35 @@ type Table struct {
 	style []cellStyle
 }
 
-func (t Table) ToMathMl(w io.Writer) {
-	write(w, "<mtable>")
-	topLine := false
-	for _, row := range t.table {
-		write(w, "<mtr>")
-		if len(row) == 0 {
-			topLine = true
-		} else {
-			for i, item := range row {
-				style := ""
-				if i < len(t.style) {
-					style = t.style[i].style()
+func (t Table) ToMathMl(w io.Writer, attr map[string]string) {
+	tag(w, "mtable", attr, func(w io.Writer) {
+		topLine := false
+		for _, row := range t.table {
+			write(w, "<mtr>")
+			if len(row) == 0 {
+				topLine = true
+			} else {
+				for i, item := range row {
+					style := ""
+					if i < len(t.style) {
+						style = t.style[i].style()
+					}
+					if topLine {
+						style += "border-top:1px solid black;"
+					}
+					if style != "" {
+						write(w, "<mtd style=\"", style, "\">")
+					} else {
+						write(w, "<mtd>")
+					}
+					item.ToMathMl(w, nil)
+					write(w, "</mtd>")
 				}
-				if topLine {
-					style += "border-top:1px solid black;"
-				}
-				if style != "" {
-					write(w, "<mtd style=\"", style, "\">")
-				} else {
-					write(w, "<mtd>")
-				}
-				item.ToMathMl(w)
-				write(w, "</mtd>")
+				topLine = false
 			}
-			topLine = false
+			write(w, "</mtr>")
 		}
-		write(w, "</mtr>")
-	}
-	write(w, "</mtable>")
+	})
 }
 
 func ScanDollar(text string) string {
@@ -271,7 +300,7 @@ func LaTeXtoMathMLString(latex string) (string, error) {
 		return "", err
 	}
 	b := bytes.Buffer{}
-	ast.ToMathMl(&b)
+	ast.ToMathMl(&b, nil)
 	return b.String(), err
 }
 
@@ -351,12 +380,15 @@ func (p *parser) ParseCommand(value string) Ast {
 	case "sqrt":
 		return Sqrt{p.ParseInBrace()}
 	case "vec":
-		return UnderOver{base: p.ParseInBrace(), over: SimpleOperator("&rarr;").setFontSize("75%")}
+		return UnderOver{base: p.ParseInBrace(), over: addAttribute("mathsize", "75%", SimpleOperator("&rarr;"))}
 	case "table":
 		return p.parseTable()
 	case "overset":
 		over := p.ParseInBrace()
 		return UnderOver{base: p.ParseInBrace(), over: over}
+	case "ds":
+		inner := p.ParseInBrace()
+		return addAttribute("displaystyle", "true", inner)
 	case "underset":
 		under := p.ParseInBrace()
 		return UnderOver{base: p.ParseInBrace(), under: under}
@@ -410,7 +442,7 @@ func (p *parser) getBrace(brace Kind) Ast {
 func SimpleIdent(s string) Ast {
 	return SimpleItem{tok: Token{kind: Identifier, value: s}}
 }
-func SimpleOperator(s string) SimpleItem {
+func SimpleOperator(s string) Ast {
 	return SimpleItem{tok: Token{kind: Operator, value: s}}
 }
 func SimpleNumber(s string) Ast {
