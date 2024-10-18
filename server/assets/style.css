@@ -64,6 +64,7 @@ div.lecture {
 
 tr.result {
 }
+
 td.result-c1 {
     text-align: right;
     padding-bottom: 1em;
@@ -74,6 +75,18 @@ td.result-c2 {
     text-align: left;
     padding-bottom: 1em;
     padding-top: 1em;
+}
+
+td.result-c1c {
+    text-align: right;
+    padding-bottom: 0.3em;
+    padding-top: 0.3em;
+}
+
+td.result-c2c {
+    text-align: left;
+    padding-bottom: 0.3em;
+    padding-top: 0.3em;
 }
 
 div.result {

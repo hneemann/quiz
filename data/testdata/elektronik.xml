@@ -9,41 +9,24 @@
             <Question>Eine Diode ...</Question>
             <Input id="elBau" type="checkbox">
                 <Label>ist ein elektronisches Bauteil.</Label>
-                <Validator>
-                    <Expression>a.elBau</Expression>
-                    <Test outcome="true"/>
-                </Validator>
             </Input>
             <Input id="zwei" type="checkbox">
                 <Label>hat zwei Anschlüsse</Label>
-                <Validator>
-                    <Expression>a.zwei</Expression>
-                </Validator>
             </Input>
             <Input id="drei" type="checkbox">
                 <Label>hat drei Anschlüsse</Label>
-                <Validator>
-                    <Expression>!a.drei</Expression>
-                </Validator>
             </Input>
             <Input id="linear" type="checkbox">
                 <Label>zeigt lineares Verhalten.</Label>
-                <Validator>
-                    <Expression>!a.linear</Expression>
-                </Validator>
             </Input>
             <Input id="nlinear" type="checkbox">
                 <Label>zeigt nicht lineares Verhalten.</Label>
-                <Validator>
-                    <Expression>a.nlinear</Expression>
-                </Validator>
             </Input>
             <Validator>
                 <Expression>
-                    if a.nlinear and a.linear
-                    then "Wie kann eine Diode gleichzeitig linear und nicht linear sein?"
-                    else true
+                    a.elBau and a.zwei and !a.drei and !a.linear and a.nlinear
                 </Expression>
+                <Explanation>Die Diode ist ein nichtlineares elektronisches Bauteil mit zwei Anschlüssen.</Explanation>
             </Validator>
         </Task>
         <Task>
@@ -127,14 +110,40 @@ eine Spannungsquelle mit $U=2V$ angeschlossen.
                 <Label>Raumtemperatur: $I_D/A=$</Label>
                 <Validator>
                     <Expression>cmpValues(0.11,a.raum,5)</Expression>
-                    <Explanation>Es ergibt sich etwa $I_D=0.11mA$.</Explanation>
+                    <Explanation>Es ergibt sich etwa $I_D=0.11A$.</Explanation>
                 </Validator>
             </Input>
             <Input id="T175" type="text">
                 <Label>Bei $175^o C$: $I_D/A=$</Label>
                 <Validator>
                     <Expression>cmpValues(0.125,a.T175,5)</Expression>
-                    <Explanation>Es ergibt sich etwa $I_D=0.125mA$.</Explanation>
+                    <Explanation>Es ergibt sich etwa $I_D=0.125A$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Name>Einfacher Stromkreis 2</Name>
+            <Question>
+Eine Diode des Typs 1N4148 mit der gegebenen Kennlinie sei mit einem Serienwiderstand $R=5\Omega$ an
+eine Spannungsquelle mit $U=2V$ angeschlossen.
+
+1. Wie groß kann der Diodenstrom $I_D$ bei Raumtemperatur maximal werden?
+2. Wie groß kann $I_D$ bei $175^o C$ werden?
+
+![Kennlinie](Kennlinie.png)
+            </Question>
+            <Input id="raum" type="text">
+                <Label>Raumtemperatur: $I_D/A=$</Label>
+                <Validator>
+                    <Expression>cmpValues(0.19,a.raum,5)</Expression>
+                    <Explanation>Es ergibt sich etwa $I_D=0.19A$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="T175" type="text">
+                <Label>Bei $175^o C$: $I_D/A=$</Label>
+                <Validator>
+                    <Expression>cmpValues(0.22,a.T175,5)</Expression>
+                    <Explanation>Es ergibt sich etwa $I_D=0.22mA$.</Explanation>
                 </Validator>
             </Input>
         </Task>

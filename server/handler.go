@@ -50,11 +50,10 @@ var funcMap = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
-	"markdown":     func(raw string, LId int) template.HTML { return fromMarkdown(raw, false, LId) },
-	"markdownLine": func(raw string, LId int) template.HTML { return fromMarkdown(raw, true, LId) },
+	"markdown": func(raw string, LId int) template.HTML { return fromMarkdown(raw, LId) },
 }
 
-func fromMarkdown(raw string, skipParagraph bool, LId int) template.HTML {
+func fromMarkdown(raw string, LId int) template.HTML {
 	// create Markdown parser with extensions
 	extensions := parser.CommonExtensions |
 		parser.AutoHeadingIDs |
@@ -63,21 +62,25 @@ func fromMarkdown(raw string, skipParagraph bool, LId int) template.HTML {
 	p := parser.NewWithExtensions(extensions)
 	doc := p.Parse([]byte(raw))
 
+	if d, ok := doc.(*ast.Document); ok {
+		if len(d.Children) == 1 {
+			if c, ok := d.Children[0].(*ast.Paragraph); ok {
+				d.Children = c.Children
+			}
+		}
+	}
+
 	// create HTML renderer with extensions
 	htmlFlags := html.CommonFlags | html.HrefTargetBlank
-	opts := html.RendererOptions{Flags: htmlFlags, RenderNodeHook: createRenderHook(skipParagraph, LId)}
+	opts := html.RendererOptions{Flags: htmlFlags, RenderNodeHook: createRenderHook(LId)}
 	renderer := html.NewRenderer(opts)
 
 	return template.HTML(markdown.Render(doc, renderer))
 }
 
-func createRenderHook(skipParagraph bool, LId int) html.RenderNodeFunc {
+func createRenderHook(LId int) html.RenderNodeFunc {
 	return func(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool) {
 		switch n := node.(type) {
-		case *ast.Paragraph:
-			if skipParagraph {
-				return ast.GoToNext, true
-			}
 		case *ast.Math:
 			doMath(w, n.Literal, false)
 			return ast.GoToNext, true
@@ -190,11 +193,12 @@ func getNumber(r *http.Request, id string, max int) (int, error) {
 var taskTemp = Templates.Lookup("task.html")
 
 type taskData struct {
-	Task    *data.Task
-	Answers data.DataMap
-	Result  map[string]string
-	Next    string
-	Ok      bool
+	HasResult bool
+	Task      *data.Task
+	Answers   data.DataMap
+	Result    map[string]string
+	Next      string
+	Ok        bool
 }
 
 func (td taskData) GetAnswer(id string) string {
@@ -261,6 +265,7 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 			if len(td.Result) == 0 {
 				td.Ok = true
 			}
+			td.HasResult = true
 		}
 		if t < len(chapter.Task)-1 {
 			td.Next = fmt.Sprintf("/task?l=%d&c=%d&t=%d", l, c, t+1)

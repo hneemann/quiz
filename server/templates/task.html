@@ -5,13 +5,8 @@
   <title>{{.Task.Name}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
-  <script>
-    function loaded() {
-      document.getElementById("submit").scrollIntoView();
-    }
-  </script>
 </head>
-<body onload="loaded();">
+<body {{if .HasResult}}onload="document.getElementById('submit').scrollIntoView();"{{end}}>
   <div class="main">
   <h2>{{.Task.Name}}</h2>
   {{markdown .Task.Question .Task.LID}}
@@ -25,18 +20,18 @@
     {{range .Task.Input}}
       <tr>
         {{if .Type }}
-          <td class="result-c1"><label for="input_{{.Id}}">{{markdownLine .Label $m.Task.LID}}</label></td>
+          <td class="result-c1"><label for="input_{{.Id}}">{{markdown .Label $m.Task.LID}}</label></td>
           <td class="result-c2"><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$m.GetAnswer .Id}}"></td>
         {{else}}
-          <td class="result-c1"><input type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}></td>
-          <td class="result-c2"><label for="input_{{.Id}}">{{markdownLine .Label $m.Task.LID}}</label></td>
+          <td class="result-c1c"><input type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $m.GetAnswer .Id}}checked{{end}}></td>
+          <td class="result-c2c"><label for="input_{{.Id}}">{{markdown .Label $m.Task.LID}}</label></td>
         {{end}}
       </tr>
         {{if $m.GetResult .Id}}
-        <tr class="result"><td colspan="2" class="result"><div class="result">{{markdownLine ($m.GetResult .Id) $m.Task.LID}}</div></td></tr>
+        <tr class="result"><td colspan="2" class="result"><div class="result">{{markdown ($m.GetResult .Id) $m.Task.LID}}</div></td></tr>
         {{end}}
     {{end}}
-    <table>
+    </table>
     {{if .GetResult "_task_"}}
     <div class="result">{{markdown (.GetResult "_task_") .Task.LID}}</div>
     {{end}}

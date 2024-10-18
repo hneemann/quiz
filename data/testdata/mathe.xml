@@ -5,10 +5,10 @@
         <Name>Algebra</Name>
         <Description>Einige einfache Aufgaben aus der Algebra.</Description>
         <Task>
-            <Name>Zusammenfassung</Name>
+            <Name>Ausdrücke zusammenfassen</Name>
             <Question>Fassen Sie die Ausdrücke so weit wie möglich zusammen:</Question>
             <Input id="func1" type="text">
-                <Label>$\frac{b\cdot c+c}{a+a\cdot b}=$</Label>
+                <Label>$\ds{\frac{b\cdot c+c}{a+a\cdot b}}=$</Label>
                 <Validator>
                     <Expression>
                         if cmpFunc("c/a",a.func1,["a","b","c","d"],[[-2,1,3,4],[-1,3,4,5],[1,-2,-4,2]])
@@ -74,12 +74,22 @@
         </Task>
         <Task>
             <Name>Trigonometrie</Name>
-            <Question>Geben Sie die Ableitung der Funktion $f(x)=sin(x)$ an:</Question>
+            <Question>Geben Sie die Ableitung der Funktion an:</Question>
             <Input id="func" type="text">
-                <Label>Die Ableitung lautet $f'(x)=$</Label>
+                <Label>$\frac{\dif}{\dif x} sin(x)=$</Label>
                 <Validator>
                     <Expression>
                         cmpFunc("cos(x)",a.func,["x"],[[-2],[-1],[0],[1],[2]])
+                    </Expression>
+                    <Help>Die Reihenfolge der Ableitungen lautet $sin \rightarrow cos \rightarrow -sin$.</Help>
+                    <Explanation>Die Ableitung lautet $f'(x)=cos(x)$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="func2" type="text">
+                <Label>$\frac{\dif}{\dif x} cos(x)=$</Label>
+                <Validator>
+                    <Expression>
+                        cmpFunc("-sin(x)",a.func2,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Help>Die Reihenfolge der Ableitungen lautet $sin \rightarrow cos \rightarrow -sin$.</Help>
                     <Explanation>Die Ableitung lautet $f'(x)=cos(x)$.</Explanation>
@@ -155,6 +165,20 @@
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
                     <Explanation>Das Integral lautet $F(x)=sin(x)-x*cos(X)$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Name>Partielle Integration 2</Name>
+            <Question>Geben Sie das unbestimmte Integral der Funktion $f(x)=x^2 sin(x)$ an:</Question>
+            <Input id="func" type="text">
+                <Label>Die Stammfunktion lautet $F(x)=$</Label>
+                <Validator>
+                    <Expression>
+                        cmpFunc("(2 - x^2)*cos(x) + 2*x*sin(x) + c",a.func,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
+                    </Expression>
+                    <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
+                    <Explanation>Das Integral lautet $F(x)=(2 - x^2) cos(x) + 2 x sin(x)$.</Explanation>
                 </Validator>
             </Input>
         </Task>
