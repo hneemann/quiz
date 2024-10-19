@@ -106,13 +106,37 @@ func (s *Session) restore(path string) {
 	}
 }
 
+func (s *Session) cleanup(lectures *data.Lectures) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.completed == nil {
+		return
+	}
+
+	for hash := range s.completed {
+		hashExists := false
+		for _, lecture := range lectures.List() {
+			if lecture.Hash() == hash {
+				hashExists = true
+				break
+			}
+		}
+		if !hashExists {
+			s.dataModified = true
+			delete(s.completed, hash)
+		}
+	}
+}
+
 type Sessions struct {
 	mutex      sync.Mutex
 	sessions   map[string]*Session
 	dataFolder string
+	lectures   *data.Lectures
 }
 
-func New(dataFolder string) *Sessions {
+func New(dataFolder string, lectures *data.Lectures) *Sessions {
 
 	if _, err := os.Stat(dataFolder); err != nil {
 		err = os.MkdirAll(dataFolder, 0755)
@@ -123,6 +147,7 @@ func New(dataFolder string) *Sessions {
 
 	s := &Sessions{
 		dataFolder: dataFolder,
+		lectures:   lectures,
 		sessions:   map[string]*Session{},
 	}
 
@@ -169,6 +194,7 @@ func (s *Sessions) create(persistToken string, w http.ResponseWriter) *Session {
 	token := createRandomString()
 	session := &Session{persistToken: persistToken}
 	session.restore(path.Join(s.dataFolder, session.persistToken))
+	session.cleanup(s.lectures)
 	session.touch()
 	http.SetCookie(w, &http.Cookie{
 		Name:  cookieName,

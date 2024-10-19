@@ -129,6 +129,10 @@ type Lecture struct {
 	files       map[string][]byte
 }
 
+func (l *Lecture) Hash() string {
+	return l.hash
+}
+
 func (l *Lecture) LID() string {
 	return l.Id
 }

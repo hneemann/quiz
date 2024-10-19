@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	sessions := session.New(*dataFolder)
+	sessions := session.New(*dataFolder, lectures)
 
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
