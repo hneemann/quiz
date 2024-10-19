@@ -30,8 +30,6 @@ func (s *Session) TaskCompleted(id data.TaskId) {
 		s.completed = map[data.TaskId]struct{}{}
 	}
 
-	log.Println("completed task", id)
-
 	s.completed[id] = struct{}{}
 }
 
@@ -44,8 +42,6 @@ func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 	}
 	_, ok := s.completed[id]
 
-	log.Println("check task", id, ok)
-
 	return ok
 }
 
@@ -55,9 +51,25 @@ type Sessions struct {
 }
 
 func New() *Sessions {
-	return &Sessions{
+	s := &Sessions{
 		sessions: map[string]*Session{},
 	}
+
+	go func() {
+		for {
+			time.Sleep(10 * time.Minute)
+			log.Println("cleaning sessions")
+			s.mutex.Lock()
+			for k, v := range s.sessions {
+				if time.Since(v.time) > 30*time.Minute {
+					delete(s.sessions, k)
+				}
+			}
+			s.mutex.Unlock()
+		}
+	}()
+
+	return s
 }
 
 const cookieName = "sessionId"
