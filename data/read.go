@@ -29,10 +29,6 @@ func ReadLectures(folder string) (Lectures, error) {
 			}
 		}
 		if lecture != nil {
-			err = lecture.Init()
-			if err != nil {
-				return nil, fmt.Errorf("error initializing lecture: %w", err)
-			}
 			lectures = append(lectures, lecture)
 		}
 	}
@@ -41,10 +37,7 @@ func ReadLectures(folder string) (Lectures, error) {
 		return lectures[i].Name < lectures[j].Name
 	})
 
-	err = lectures.Init()
-	if err != nil {
-		return nil, fmt.Errorf("error initializing lectures: %w", err)
-	}
+	lectures.Init()
 	return lectures, nil
 }
 

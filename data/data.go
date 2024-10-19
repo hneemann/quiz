@@ -127,6 +127,8 @@ func (l *Lecture) Init() error {
 
 			if task.Name == "" {
 				task.Name = fmt.Sprintf("Aufgabe %d", tid+1)
+			} else {
+				task.Name = fmt.Sprintf("Aufgabe %d: %s", tid+1, task.Name)
 			}
 
 			m := make(map[string]struct{})
@@ -149,7 +151,7 @@ func (l *Lecture) Init() error {
 
 type Lectures []*Lecture
 
-func (l Lectures) Init() error {
+func (l Lectures) Init() {
 	for lid, lecture := range l {
 		lecture.lid = lid
 		for _, chapter := range lecture.Chapter {
@@ -159,7 +161,6 @@ func (l Lectures) Init() error {
 			}
 		}
 	}
-	return nil
 }
 
 func New(r io.Reader) (*Lecture, error) {
