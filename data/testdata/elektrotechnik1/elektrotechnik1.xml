@@ -10,10 +10,10 @@ Gegeben sei die folgende Schaltung:
 
 ![Schaltung](Aufgabe1.svg)
 
-Berechnen Sie den Strom in der Spannungsquelle.
+Berechnen Sie den Strom $I_Q$ in der Spannungsquelle.
             </Question>
             <Input id="val1" type="text">
-                <Label>$I/\u{mA}$:</Label>
+                <Label>$I_Q/\u{mA}$:</Label>
                 <Validator>
                     <Expression>cmpValues(13.768,a.val1,1)</Expression>
                     <Explanation>Der Wert beträgt $13.768\u{mA}$.</Explanation>
@@ -77,10 +77,10 @@ Gegeben sei die folgende Schaltung:
                 </Validator>
             </Input>
             <Input id="val2" type="text">
-                <Label>$R_5/\Omega$:</Label>
+                <Label>$R_5/\u{\Omega}$:</Label>
                 <Validator>
                     <Expression>cmpValues(366.666,a.val2,1)</Expression>
-                    <Explanation>Der Wert beträgt $366.6\Omega$.</Explanation>
+                    <Explanation>Der Wert beträgt $366.6\u{\Omega}$.</Explanation>
                 </Validator>
             </Input>
         </Task>
