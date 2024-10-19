@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/xml"
@@ -15,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type InputType int
@@ -501,8 +503,11 @@ var myParser = value.New().
 		f.AddStaticFunction("cmpValues", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
                                                     let is=isExp.eval([]);
-                                                    let dif=abs(is-expected)/expected*100;
-                                                    dif<percent`, "expected", "isStr", "percent")),
+													if expected=0 
+                                                    then abs(is)<percent/100
+                                                    else
+                                                      let dif=abs((is-expected)/expected*100);
+                                                      dif<percent`, "expected", "isStr", "percent")),
 			Args:   3,
 			IsPure: true,
 		}.SetDescription("expected", "is", "percent", "compares two values"))
@@ -547,11 +552,59 @@ func createExpression(expr string, args []string) (value.Value, error) {
 	if len(expr) == 0 {
 		return nil, fmt.Errorf("Der Ausdruck ist leer!")
 	}
+
+	expr = cleanupExpression(expr)
+
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
 		return nil, GuiError{message: fmt.Sprintf("Der Ausdruck '%s' enthält Fehler!", expr), cause: err}
 	}
 	return Expression{expression: expr, fu: fu}, nil
+}
+
+func cleanupExpression(expr string) string {
+	var b bytes.Buffer
+	wasNumber := false
+	for _, a := range expr {
+		switch {
+		case a == '²':
+			b.WriteRune('^')
+			b.WriteRune('2')
+		case a == '³':
+			b.WriteRune('^')
+			b.WriteRune('3')
+		case a == '⁴':
+			b.WriteRune('^')
+			b.WriteRune('4')
+		case a == '⁵':
+			b.WriteRune('^')
+			b.WriteRune('5')
+		case a == '⁶':
+			b.WriteRune('^')
+			b.WriteRune('6')
+		case a == '⁷':
+			b.WriteRune('^')
+			b.WriteRune('7')
+		case a == '⁸':
+			b.WriteRune('^')
+			b.WriteRune('8')
+		case a == '9':
+			b.WriteRune('^')
+			b.WriteRune('9')
+		case unicode.IsNumber(a):
+			b.WriteRune(a)
+			wasNumber = true
+		default:
+			if wasNumber {
+				if unicode.IsLetter(a) || a == '(' {
+					b.WriteRune('*')
+				}
+				wasNumber = false
+			}
+			b.WriteRune(a)
+		}
+	}
+	return b.String()
 }
 
 var floatParser = funcGen.New[float64]().

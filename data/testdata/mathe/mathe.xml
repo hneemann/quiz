@@ -54,6 +54,43 @@
                 </Validator>
             </Input>
         </Task>
+        <Task>
+            <Name>Nullstellen</Name>
+            <Question>Geben Sie die Nullstellen der Funktion $f(x)=x^2-x-2$ an:</Question>
+            <Input id="n1" type="text">
+                <Label>Nullstelle $x_1=$</Label>
+            </Input>
+            <Input id="n2" type="text">
+                <Label>Nullstelle $x_2=$</Label>
+            </Input>
+            <Validator>
+                <Expression>
+                    (cmpValues(-1,a.n1,1) and cmpValues(2,a.n2,1)) or (cmpValues(-1,a.n2,1) and cmpValues(2,a.n1,1))
+                </Expression>
+                <Explanation>Die Nullstellen sind $x_1=-1$ und $x_2=2$.</Explanation>
+            </Validator>
+        </Task>
+        <Task>
+            <Name>Nullstellen 2</Name>
+            <Question>Geben Sie die Nullstellen der von $u$ abhängigen Funktion $f(x)=x^2 - 2 u x - 2$ an:</Question>
+            <Input id="n1" type="text">
+                <Label>Nullstelle $x_1=$</Label>
+            </Input>
+            <Input id="n2" type="text">
+                <Label>Nullstelle $x_2=$</Label>
+            </Input>
+            <Validator>
+                <Expression>
+                    let e1="u-sqrt(u^2+2)";
+                    let e2="sqrt(u^2+2)+u";
+                       (cmpFunc(e1,a.n1,["u"],[[-1],[0],[1],[2],[5]])
+                    and cmpFunc(e2,a.n2,["u"],[[-1],[0],[1],[2],[5]]))
+                    or (cmpFunc(e2,a.n2,["u"],[[-1],[0],[1],[2],[5]])
+                    and cmpFunc(e1,a.n1,["u"],[[-1],[0],[1],[2],[5]]))
+                </Expression>
+                <Explanation>Die Nullstellen sind $x_1=u - \sqrt{u^2 + 2}$ und $x_2=\sqrt{u^2 + 2} + u$</Explanation>
+            </Validator>
+        </Task>
     </Chapter>
     <Chapter>
         <Name>Differentiation</Name>
