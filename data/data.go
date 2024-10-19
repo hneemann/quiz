@@ -1,14 +1,18 @@
 package data
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/hneemann/parser2"
 	"github.com/hneemann/parser2/funcGen"
 	"github.com/hneemann/parser2/value"
+	"hash"
 	"io"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -60,7 +64,8 @@ type Input struct {
 }
 
 type Task struct {
-	lid       int
+	lid       string
+	lHash     string
 	cid       int
 	tid       int
 	Name      string
@@ -69,13 +74,17 @@ type Task struct {
 	Validator Validator
 }
 
-type TaskId struct {
-	Lecture int
-	Chapter int
-	Task    int
+type InnerId struct {
+	CId int
+	TId int
 }
 
-func (t *Task) LID() int {
+type TaskId struct {
+	LHash   string
+	InnerId InnerId
+}
+
+func (t *Task) LID() string {
 	return t.lid
 }
 
@@ -87,14 +96,14 @@ func (t *Task) TID() int {
 }
 
 type Chapter struct {
-	lid         int
+	lid         string
 	cid         int
 	Name        string
 	Description string
 	Task        []*Task
 }
 
-func (c *Chapter) LID() int {
+func (c *Chapter) LID() string {
 	return c.lid
 }
 
@@ -102,10 +111,7 @@ func (c *Chapter) CID() int {
 	return c.cid
 }
 
-func (c *Chapter) GetTask(number int, err error) (*Task, error) {
-	if err != nil {
-		return nil, err
-	}
+func (c *Chapter) GetTask(number int) (*Task, error) {
 	if number < 0 || number >= len(c.Task) {
 		return nil, fmt.Errorf("task %d not found", number)
 	}
@@ -113,15 +119,16 @@ func (c *Chapter) GetTask(number int, err error) (*Task, error) {
 }
 
 type Lecture struct {
-	lid         int
+	Id          string `xml:"id,attr"`
 	Name        string
+	hash        string
 	Description string
 	Chapter     []*Chapter
 	files       map[string][]byte
 }
 
-func (l *Lecture) LID() int {
-	return l.lid
+func (l *Lecture) LID() string {
+	return l.Id
 }
 
 func (l *Lecture) GetFile(name string) ([]byte, error) {
@@ -140,6 +147,7 @@ func (l *Lecture) Init() error {
 		for tid, task := range chapter.Task {
 			task.cid = cid
 			task.tid = tid
+			task.lHash = l.hash
 
 			if task.Name == "" {
 				task.Name = fmt.Sprintf("Aufgabe %d", tid+1)
@@ -165,21 +173,22 @@ func (l *Lecture) Init() error {
 	return nil
 }
 
-func (l *Lecture) GetChapter(number int, err error) (*Chapter, error) {
-	if err != nil {
-		return nil, err
-	}
+func (l *Lecture) GetChapter(number int) (*Chapter, error) {
 	if number < 0 || number >= len(l.Chapter) {
 		return nil, fmt.Errorf("chapter %d not found", number)
 	}
 	return l.Chapter[number], nil
 }
 
-type Lectures []*Lecture
+type Lectures struct {
+	lectures map[string]*Lecture
+	list     []*Lecture
+}
 
-func (l *Lectures) Init() {
-	for lid, lecture := range *l {
-		lecture.lid = lid
+func (l *Lectures) init() {
+	lectureList := make([]*Lecture, 0, len(l.lectures))
+	for lid, lecture := range l.lectures {
+		lectureList = append(lectureList, lecture)
 		for _, chapter := range lecture.Chapter {
 			chapter.lid = lid
 			for _, task := range chapter.Task {
@@ -187,28 +196,56 @@ func (l *Lectures) Init() {
 			}
 		}
 	}
+	sort.Slice(lectureList, func(i, j int) bool {
+		return lectureList[i].Name < lectureList[j].Name
+	})
+	l.list = lectureList
 }
 
-func (l *Lectures) Count() int {
-	return len(*l)
+func (l *Lectures) List() []*Lecture {
+	return l.list
 }
 
-func (l *Lectures) GetLecture(number int, err error) (*Lecture, error) {
-	if err != nil {
-		return nil, err
+func (l *Lectures) GetLecture(id string) (*Lecture, error) {
+	if lecture, ok := l.lectures[id]; ok {
+		return lecture, nil
 	}
-	if number < 0 || number >= len(*l) {
-		return nil, fmt.Errorf("lecture %d not found", number)
+	return nil, fmt.Errorf("lecture %s not found", id)
+}
+
+func (l *Lectures) add(lecture *Lecture) {
+	if l.lectures == nil {
+		l.lectures = make(map[string]*Lecture)
 	}
-	return (*l)[number], nil
+	l.lectures[lecture.Id] = lecture
+}
+
+type hashReader struct {
+	parent io.Reader
+	hasher hash.Hash
+}
+
+func (h *hashReader) Read(p []byte) (n int, err error) {
+	n, err = h.parent.Read(p)
+	if n > 0 {
+		h.hasher.Write(p[:n])
+	}
+	return
+}
+
+func (h *hashReader) get() string {
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(h.hasher.Sum(nil))
 }
 
 func New(r io.Reader) (*Lecture, error) {
 	var l Lecture
-	err := xml.NewDecoder(r).Decode(&l)
+	h := hashReader{parent: r, hasher: sha1.New()}
+	err := xml.NewDecoder(&h).Decode(&l)
 	if err != nil {
 		return nil, err
 	}
+	l.hash = h.get()
+
 	err = l.Init()
 	if err != nil {
 		return nil, err
@@ -333,7 +370,7 @@ func (t *Task) Validate(input DataMap, showResult bool) map[string]string {
 }
 
 func (t *Task) GetId() TaskId {
-	return TaskId{Lecture: t.lid, Chapter: t.cid, Task: t.tid}
+	return TaskId{LHash: t.lHash, InnerId: InnerId{CId: t.cid, TId: t.tid}}
 }
 
 type Expression struct {
@@ -357,7 +394,7 @@ func (e Expression) ToFloat() (float64, bool) {
 	return 0, false
 }
 
-func (e Expression) ToString(st funcGen.Stack[value.Value]) (string, error) {
+func (e Expression) ToString(funcGen.Stack[value.Value]) (string, error) {
 	return e.expression, nil
 }
 
@@ -412,7 +449,7 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 				args := make([]float64, len(argValues))
 				for i, v := range argValues {
 					if f, ok := v.ToFloat(); ok {
-						args[i] = float64(f)
+						args[i] = f
 					} else {
 						return nil, fmt.Errorf("expected float, got %v", v)
 					}
@@ -482,7 +519,7 @@ var myParser = value.New().
 					return nil, GuiError{message: "Die Eingabe ist leer!"}
 				}
 				if list, ok := stack.Get(1).(*value.List); ok {
-					args := []string{}
+					var args []string
 					argValues, err := list.ToSlice(stack)
 					if err != nil {
 						return nil, err

@@ -10,8 +10,8 @@
 
   <div class="main">
   <h2>Vorlesungen</h2>
-  {{range .}}
-    <a href="/lecture/?l={{.LID}}">
+  {{range .List}}
+    <a href="/lecture/{{.LID}}">
     <div class="lecture">
       <h2>{{.Name}}</h2>
       <p>{{markdown .Description .LID}}</p>

@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	github.com/gomarkdown/markdown v0.0.0-20240930133441-72d49d9543d8
+	github.com/hneemann/objectDB v0.0.0-20240827072326-3997da940df8
 	github.com/hneemann/parser2 v0.0.0-20241018155607-1c687692fdb0
 	github.com/stretchr/testify v1.9.0
 )

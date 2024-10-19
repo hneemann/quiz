@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 )
 
 func ReadLectures(folder string) (*Lectures, error) {
@@ -29,15 +28,11 @@ func ReadLectures(folder string) (*Lectures, error) {
 			}
 		}
 		if lecture != nil {
-			lectures = append(lectures, lecture)
+			lectures.add(lecture)
 		}
 	}
 
-	sort.Slice(lectures, func(i, j int) bool {
-		return lectures[i].Name < lectures[j].Name
-	})
-
-	lectures.Init()
+	lectures.init()
 	return &lectures, nil
 }
 

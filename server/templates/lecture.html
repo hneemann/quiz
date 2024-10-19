@@ -13,7 +13,7 @@
 
   {{range .Chapter}}
     <div class="chapter">
-      <a href="/chapter/?l={{.LID}}&c={{.CID}}">
+      <a href="/chapter/{{.LID}}/{{.CID}}">
       <h2>{{.Name}}</h2>
       {{markdown .Description .LID}}
       </a>

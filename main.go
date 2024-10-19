@@ -14,21 +14,21 @@ import (
 )
 
 func main() {
-	folder := flag.String("folder", "data/testdata", "data folder")
+	lectureFolder := flag.String("lectures", "data/testdata", "lecture folder")
+	dataFolder := flag.String("data", "sessionData", "data folder")
 	cert := flag.String("cert", "", "certificate file e.g. cert.pem")
 	key := flag.String("key", "", "key file e.g. key.pem")
 	debug := flag.Bool("debug", true, "starts server in debug mode")
 	port := flag.Int("port", 8080, "port")
 	flag.Parse()
 
-	lectures, err := data.ReadLectures(*folder)
+	lectures, err := data.ReadLectures(*lectureFolder)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sessions := session.New()
+	sessions := session.New(*dataFolder)
 
-	shutdown := make(chan struct{})
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
 	mux.Handle("/", server.CreateMain(lectures))
@@ -44,7 +44,7 @@ func main() {
 	go func() {
 		<-c
 		log.Print("terminated")
-		close(shutdown)
+
 		err := serv.Shutdown(context.Background())
 		if err != nil {
 			log.Println(err)
@@ -66,6 +66,8 @@ func main() {
 			log.Println(err)
 		}
 	}
+
+	sessions.PersistAll()
 }
 
 func Cache(parent http.Handler, minutes int, debug bool) http.Handler {

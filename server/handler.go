@@ -51,10 +51,10 @@ var funcMap = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
-	"markdown": func(raw string, LId int) template.HTML { return fromMarkdown(raw, LId) },
+	"markdown": func(raw string, LId string) template.HTML { return fromMarkdown(raw, LId) },
 }
 
-func fromMarkdown(raw string, LId int) template.HTML {
+func fromMarkdown(raw string, LId string) template.HTML {
 	// create Markdown parser with extensions
 	extensions := parser.CommonExtensions |
 		parser.AutoHeadingIDs |
@@ -79,7 +79,7 @@ func fromMarkdown(raw string, LId int) template.HTML {
 	return template.HTML(markdown.Render(doc, renderer))
 }
 
-func createRenderHook(LId int) html.RenderNodeFunc {
+func createRenderHook(LId string) html.RenderNodeFunc {
 	return func(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool) {
 		switch n := node.(type) {
 		case *ast.Math:
@@ -100,7 +100,7 @@ func createRenderHook(LId int) html.RenderNodeFunc {
 				n.Attribute = attr
 
 				name := string(n.Destination)
-				url := "/image/" + strconv.Itoa(LId) + "/" + name
+				url := "/image/" + LId + "/" + name
 				n.Destination = []byte(url)
 			}
 			return ast.GoToNext, false
@@ -143,7 +143,8 @@ var lectureTemp = Templates.Lookup("lecture.html")
 
 func CreateLecture(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lecture, err := lectures.GetLecture(getNumber(r, "l"))
+		lectureId, _ := getStrFromPath(r.URL.Path)
+		lecture, err := lectures.GetLecture(lectureId)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
@@ -153,6 +154,22 @@ func CreateLecture(lectures *data.Lectures) http.Handler {
 			log.Println(err)
 		}
 	})
+}
+
+func getStrFromPath(p string) (string, string) {
+	if p[len(p)-1] == '/' {
+		p = p[:len(p)-1]
+	}
+	return path.Base(p), path.Dir(p)
+}
+
+func getIntFromPath(p string) (int, string) {
+	str, n := getStrFromPath(p)
+	i, err := strconv.Atoi(str)
+	if err != nil {
+		return -1, n
+	}
+	return i, n
 }
 
 var chapterTemp = Templates.Lookup("chapter.html")
@@ -171,13 +188,15 @@ func (cd chapterData) Completed(id data.TaskId) bool {
 
 func CreateChapter(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lecture, err := lectures.GetLecture(getNumber(r, "l"))
+		c, next := getIntFromPath(r.URL.Path)
+		l, _ := getStrFromPath(next)
+		lecture, err := lectures.GetLecture(l)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
 
-		chapter, err := lecture.GetChapter(getNumber(r, "c"))
+		chapter, err := lecture.GetChapter(c)
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
@@ -190,20 +209,6 @@ func CreateChapter(lectures *data.Lectures) http.Handler {
 			log.Println(err)
 		}
 	})
-}
-
-func getNumber(r *http.Request, id string) (int, error) {
-	lStr := r.URL.Query().Get(id)
-
-	if lStr == "" {
-		lStr = r.Form.Get(id)
-	}
-
-	l, err := strconv.Atoi(lStr)
-	if err != nil {
-		return 0, err
-	}
-	return l, nil
 }
 
 var taskTemp = Templates.Lookup("task.html")
@@ -238,27 +243,22 @@ func (td taskData) GetResult(id string) string {
 
 func CreateTask(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			err := r.ParseForm()
-			if err != nil {
-				http.Error(w, "error parsing form", http.StatusBadRequest)
-				return
-			}
-		}
-
-		lecture, err := lectures.GetLecture(getNumber(r, "l"))
+		t, next := getIntFromPath(r.URL.Path)
+		c, next := getIntFromPath(next)
+		l, _ := getStrFromPath(next)
+		lecture, err := lectures.GetLecture(l)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
 
-		chapter, err := lecture.GetChapter(getNumber(r, "c"))
+		chapter, err := lecture.GetChapter(c)
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
 		}
 
-		task, err := chapter.GetTask(getNumber(r, "t"))
+		task, err := chapter.GetTask(t)
 		if err != nil {
 			http.Error(w, "invalid task number", http.StatusBadRequest)
 			return
@@ -267,6 +267,11 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 		td := taskData{Task: task, Answers: data.DataMap{}}
 
 		if r.Method == http.MethodPost {
+			err = r.ParseForm()
+			if err != nil {
+				http.Error(w, "error parsing form", http.StatusBadRequest)
+				return
+			}
 			for _, i := range task.Input {
 				a := r.Form.Get("input_" + i.Id)
 				switch i.Type {
@@ -289,7 +294,7 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 			td.HasResult = true
 		}
 		if task.TID() < len(chapter.Task)-1 {
-			td.Next = fmt.Sprintf("/task?l=%d&c=%d&t=%d", task.LID(), task.CID(), task.TID()+1)
+			td.Next = fmt.Sprintf("/task/%s/%d/%d/", task.LID(), task.CID(), task.TID()+1)
 		}
 
 		err = taskTemp.Execute(w, td)
@@ -301,10 +306,10 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 
 func CreateImages(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		url := r.URL.Path
-		file := path.Base(url)
+		file, next := getStrFromPath(r.URL.Path)
+		l, _ := getStrFromPath(next)
 
-		lecture, err := lectures.GetLecture(strconv.Atoi(path.Base(path.Dir(url))))
+		lecture, err := lectures.GetLecture(l)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
