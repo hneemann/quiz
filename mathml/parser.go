@@ -10,8 +10,11 @@ type parser struct {
 	tok *Tokenizer
 }
 
+type Walker func(a Ast)
+
 type Ast interface {
 	ToMathMl(w io.Writer, attr map[string]string)
+	Walk(Walker)
 }
 
 type SimpleItem struct {
@@ -19,12 +22,12 @@ type SimpleItem struct {
 	fontsize string
 }
 
-func (s SimpleItem) setFontSize(size string) SimpleItem {
+func (s *SimpleItem) setFontSize(size string) *SimpleItem {
 	s.fontsize = size
 	return s
 }
 
-func (s SimpleItem) ToMathMl(w io.Writer, attr map[string]string) {
+func (s *SimpleItem) ToMathMl(w io.Writer, attr map[string]string) {
 	switch s.tok.kind {
 	case Number:
 		s.write(w, "mn", attr)
@@ -34,10 +37,15 @@ func (s SimpleItem) ToMathMl(w io.Writer, attr map[string]string) {
 		s.write(w, "mo", attr)
 	}
 }
-func (s SimpleItem) write(w io.Writer, t string, attr map[string]string) {
+
+func (s *SimpleItem) write(w io.Writer, t string, attr map[string]string) {
 	tag(w, t, attr, func(w io.Writer) {
 		write(w, s.tok.value)
 	})
+}
+
+func (s *SimpleItem) Walk(walker Walker) {
+	walker(s)
 }
 
 func write(w io.Writer, s ...string) {
@@ -64,7 +72,7 @@ type Row struct {
 	items []Ast
 }
 
-func (f Row) ToMathMl(w io.Writer, attr map[string]string) {
+func (f *Row) ToMathMl(w io.Writer, attr map[string]string) {
 	tag(w, "mrow", attr, func(w io.Writer) {
 		for _, item := range f.items {
 			item.ToMathMl(w, nil)
@@ -72,20 +80,31 @@ func (f Row) ToMathMl(w io.Writer, attr map[string]string) {
 	})
 }
 
+func (f *Row) Walk(walker Walker) {
+	walker(f)
+	for _, item := range f.items {
+		item.Walk(walker)
+	}
+}
+
 type Empty struct {
 }
 
-func (e Empty) ToMathMl(io.Writer, map[string]string) {
+func (e *Empty) ToMathMl(io.Writer, map[string]string) {
+}
+
+func (e *Empty) Walk(walker Walker) {
+	walker(e)
 }
 
 func NewRow(l ...Ast) Ast {
 	switch len(l) {
 	case 0:
-		return Empty{}
+		return &Empty{}
 	case 1:
 		return l[0]
 	default:
-		return Row{l}
+		return &Row{l}
 	}
 }
 
@@ -94,16 +113,21 @@ type AddAttribute struct {
 	attr  map[string]string
 }
 
-func (a AddAttribute) ToMathMl(w io.Writer, attr map[string]string) {
+func (a *AddAttribute) ToMathMl(w io.Writer, attr map[string]string) {
 	a.inner.ToMathMl(w, a.attr)
 }
 
 func addAttribute(key, value string, inner Ast) Ast {
-	if a, ok := inner.(AddAttribute); ok {
+	if a, ok := inner.(*AddAttribute); ok {
 		a.attr[key] = value
 		return a
 	}
-	return AddAttribute{inner: inner, attr: map[string]string{key: value}}
+	return &AddAttribute{inner: inner, attr: map[string]string{key: value}}
+}
+
+func (a *AddAttribute) Walk(walker Walker) {
+	walker(a)
+	a.inner.Walk(walker)
 }
 
 type Fraction struct {
@@ -111,11 +135,17 @@ type Fraction struct {
 	bottom Ast
 }
 
-func (f Fraction) ToMathMl(w io.Writer, attr map[string]string) {
+func (f *Fraction) ToMathMl(w io.Writer, attr map[string]string) {
 	tag(w, "mfrac", attr, func(w io.Writer) {
 		f.top.ToMathMl(w, nil)
 		f.bottom.ToMathMl(w, nil)
 	})
+}
+
+func (f *Fraction) Walk(walker Walker) {
+	walker(f)
+	f.top.Walk(walker)
+	f.bottom.Walk(walker)
 }
 
 type Index struct {
@@ -124,7 +154,7 @@ type Index struct {
 	down Ast
 }
 
-func (i Index) ToMathMl(w io.Writer, attr map[string]string) {
+func (i *Index) ToMathMl(w io.Writer, attr map[string]string) {
 	if i.up == nil {
 		tag(w, "msub", attr, func(w io.Writer) {
 			i.base.ToMathMl(w, nil)
@@ -146,11 +176,22 @@ func (i Index) ToMathMl(w io.Writer, attr map[string]string) {
 	})
 }
 
-func NewIndex(base Ast, up Ast, down Ast) Ast {
-	if i, ok := base.(SimpleItem); ok && i.tok.kind == Operator {
-		return UnderOver{base: base, over: up, under: down}
+func (i *Index) Walk(walker Walker) {
+	walker(i)
+	i.base.Walk(walker)
+	if i.up != nil {
+		i.up.Walk(walker)
 	}
-	return Index{base: base, up: up, down: down}
+	if i.down != nil {
+		i.down.Walk(walker)
+	}
+}
+
+func NewIndex(base Ast, up Ast, down Ast) Ast {
+	if i, ok := base.(*SimpleItem); ok && i.tok.kind == Operator {
+		return &UnderOver{base: base, over: up, under: down}
+	}
+	return &Index{base: base, up: up, down: down}
 }
 
 type UnderOver struct {
@@ -159,7 +200,7 @@ type UnderOver struct {
 	under Ast
 }
 
-func (o UnderOver) ToMathMl(w io.Writer, attr map[string]string) {
+func (o *UnderOver) ToMathMl(w io.Writer, attr map[string]string) {
 	if o.over == nil {
 		tag(w, "munder", attr, func(w io.Writer) {
 			o.base.ToMathMl(w, nil)
@@ -181,6 +222,17 @@ func (o UnderOver) ToMathMl(w io.Writer, attr map[string]string) {
 	})
 }
 
+func (o *UnderOver) Walk(walker Walker) {
+	walker(o)
+	o.base.Walk(walker)
+	if o.over != nil {
+		o.over.Walk(walker)
+	}
+	if o.under != nil {
+		o.under.Walk(walker)
+	}
+}
+
 type Sqrt struct {
 	inner Ast
 }
@@ -189,6 +241,11 @@ func (s Sqrt) ToMathMl(w io.Writer, attr map[string]string) {
 	tag(w, "msqrt", attr, func(w io.Writer) {
 		s.inner.ToMathMl(w, nil)
 	})
+}
+
+func (s Sqrt) Walk(walker Walker) {
+	walker(s)
+	s.inner.Walk(walker)
 }
 
 type align int
@@ -227,7 +284,7 @@ type Table struct {
 	style []cellStyle
 }
 
-func (t Table) ToMathMl(w io.Writer, attr map[string]string) {
+func (t *Table) ToMathMl(w io.Writer, attr map[string]string) {
 	tag(w, "mtable", attr, func(w io.Writer) {
 		topLine := false
 		for _, row := range t.table {
@@ -256,6 +313,15 @@ func (t Table) ToMathMl(w io.Writer, attr map[string]string) {
 			write(w, "</mtr>")
 		}
 	})
+}
+
+func (t *Table) Walk(walker Walker) {
+	walker(t)
+	for _, row := range t.table {
+		for _, item := range row {
+			item.Walk(walker)
+		}
+	}
 }
 
 func ScanDollar(text string) string {
@@ -332,11 +398,11 @@ func (p *parser) ParseFunc(isEnd func(token Token) bool) (Ast, Token) {
 		}
 		switch tok.kind {
 		case Number:
-			list = append(list, SimpleItem{tok: tok})
+			list = append(list, &SimpleItem{tok: tok})
 		case Identifier:
-			list = append(list, SimpleItem{tok: tok})
+			list = append(list, &SimpleItem{tok: tok})
 		case Operator:
-			list = append(list, SimpleItem{tok: tok})
+			list = append(list, &SimpleItem{tok: tok})
 		case OpenParen:
 			inner := p.Parse(CloseParen)
 			list = append(list, NewRow(SimpleOperator("("), inner, SimpleOperator(")")))
@@ -369,7 +435,7 @@ func (p *parser) ParseCommand(value string) Ast {
 	case "frac":
 		top := p.ParseInBrace()
 		bottom := p.ParseInBrace()
-		return Fraction{top, bottom}
+		return &Fraction{top, bottom}
 	case "pm":
 		return SimpleOperator("&PlusMinus;")
 	case "left":
@@ -380,20 +446,28 @@ func (p *parser) ParseCommand(value string) Ast {
 	case "sqrt":
 		return Sqrt{p.ParseInBrace()}
 	case "vec":
-		return UnderOver{base: p.ParseInBrace(), over: addAttribute("mathsize", "75%", SimpleOperator("&rarr;"))}
+		return &UnderOver{base: p.ParseInBrace(), over: addAttribute("mathsize", "75%", SimpleOperator("&rarr;"))}
 	case "u":
-		return SimpleNumber(p.ParsePlainInBrace())
+		inner := p.ParseInBrace()
+		inner.Walk(func(a Ast) {
+			if si, ok := a.(*SimpleItem); ok {
+				if si.tok.kind == Identifier {
+					si.tok.kind = Number
+				}
+			}
+		})
+		return inner
 	case "table":
 		return p.parseTable()
 	case "overset":
 		over := p.ParseInBrace()
-		return UnderOver{base: p.ParseInBrace(), over: over}
+		return &UnderOver{base: p.ParseInBrace(), over: over}
 	case "ds":
 		inner := p.ParseInBrace()
 		return addAttribute("displaystyle", "true", inner)
 	case "underset":
 		under := p.ParseInBrace()
-		return UnderOver{base: p.ParseInBrace(), under: under}
+		return &UnderOver{base: p.ParseInBrace(), under: under}
 	case "sum":
 		return SimpleOperator("&sum;")
 	case "int":
@@ -436,25 +510,25 @@ func (p *parser) getBrace(brace Kind) Ast {
 		panic(fmt.Sprintf("unexpected token behind \\left or \\right: %v", b))
 	}
 	if b.value == "." {
-		return Empty{}
+		return &Empty{}
 	}
 	return SimpleOperator(b.value)
 }
 
 func SimpleIdent(s string) Ast {
-	return SimpleItem{tok: Token{kind: Identifier, value: s}}
+	return &SimpleItem{tok: Token{kind: Identifier, value: s}}
 }
 func SimpleOperator(s string) Ast {
-	return SimpleItem{tok: Token{kind: Operator, value: s}}
+	return &SimpleItem{tok: Token{kind: Operator, value: s}}
 }
 func SimpleNumber(s string) Ast {
-	return SimpleItem{tok: Token{kind: Number, value: s}}
+	return &SimpleItem{tok: Token{kind: Number, value: s}}
 }
 
 func (p *parser) ParseInBrace() Ast {
 	n := p.tok.NextToken()
 	if n.kind == Number || n.kind == Identifier {
-		return SimpleItem{tok: n}
+		return &SimpleItem{tok: n}
 	}
 	if n.kind != OpenBrace {
 		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
@@ -484,10 +558,10 @@ func (p *parser) parseTable() Ast {
 			if len(row) > 0 {
 				table = append(table, row)
 			}
-			return Table{table: table, style: styles}
+			return &Table{table: table, style: styles}
 		case Linefeed:
 			if len(row) == 1 {
-				if si, ok := row[0].(SimpleItem); ok && si.tok.value == "-" {
+				if si, ok := row[0].(*SimpleItem); ok && si.tok.value == "-" {
 					row = nil
 				}
 			}
@@ -539,20 +613,5 @@ func (p *parser) parseTableDef() []cellStyle {
 			complete = true
 			cs.align = center
 		}
-	}
-}
-
-func (p *parser) ParsePlainInBrace() string {
-	n := p.tok.NextToken()
-	if n.kind != OpenBrace {
-		panic(fmt.Sprintf("unexpected token, expected {, got %v", n))
-	}
-	var text string
-	for {
-		n = p.tok.NextToken()
-		if n.kind == CloseBrace || n.kind == EOF {
-			return text
-		}
-		text += n.value
 	}
 }
