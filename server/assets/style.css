@@ -133,6 +133,7 @@ img {
     margin-left: auto;
     margin-right: auto;
     padding: 0.5em;
-    max-width: 70%;
+    max-width: 100%;
+    min-width: 30%;
     height: auto;
 }

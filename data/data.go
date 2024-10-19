@@ -125,6 +125,10 @@ func (l *Lecture) Init() error {
 			task.cid = cid
 			task.tid = tid
 
+			if task.Name == "" {
+				task.Name = fmt.Sprintf("Aufgabe %d", tid+1)
+			}
+
 			m := make(map[string]struct{})
 			for _, i := range task.Input {
 				if _, ok := m[i.Id]; ok {

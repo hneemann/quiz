@@ -5,11 +5,10 @@
         <Name>Gleichstromkreise</Name>
         <Description>Aufgaben zu Netzwerken mit nur einer Strom- oder Spannungsquelle.</Description>
         <Task>
-            <Name>Aufgabe 1</Name>
             <Question>
 Gegeben sei die folgende Schaltung:
 
-![Schaltung](Aufgabe1.png)
+![Schaltung](Aufgabe1.svg)
 
 Berechnen Sie den Strom in der Spannungsquelle.
             </Question>
@@ -22,19 +21,66 @@ Berechnen Sie den Strom in der Spannungsquelle.
             </Input>
         </Task>
         <Task>
-            <Name>Aufgabe 2</Name>
             <Question>
 Gegeben sei die folgende Schaltung:
 
-![Schaltung](Aufgabe2.png)
+![Schaltung](Aufgabe4.svg)
 
-Berechnen Sie den Strom in der Spannungsquelle.
+Berechnen Sie die Spannung $U_Q$ der Stromquelle.
             </Question>
             <Input id="val1" type="text">
-                <Label>$I/\u{mA}$:</Label>
+                <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>cmpValues(22.78,a.val1,1)</Expression>
+                    <Expression>cmpValues(24.458,a.val1,1)</Expression>
+                    <Explanation>Der Wert beträgt $24.45\u{V}$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Question>
+Gegeben sei die folgende Schaltung:
+
+![Schaltung](Aufgabe2.svg)
+
+Berechnen Sie den Strom in der Spannungsquelle $I_Q$ und den Strom in $R_5$.
+            </Question>
+            <Input id="val1" type="text">
+                <Label>$I_Q/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(22.779,a.val1,1)</Expression>
                     <Explanation>Der Wert beträgt $22.78\u{mA}$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="val2" type="text">
+                <Label>$I_{R_5}/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(1.595,a.val2,1)</Expression>
+                    <Explanation>Der Wert beträgt $1.595\u{mA}$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Question>
+Gegeben sei die folgende Schaltung:
+
+![Schaltung](Aufgabe3.svg)
+
+ 1. Berechnen Sie die Strom $I_Q$ der Spannungsquelle.
+ 1. Wie groß muss $R_5$ gesetzt werden, damit $I_Q=10\u{mA}$ beträgt?
+
+            </Question>
+            <Input id="val1" type="text">
+                <Label>$I_Q/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(11.538,a.val2,1)</Expression>
+                    <Explanation>Der Wert beträgt $11.538\u{mA}$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="val2" type="text">
+                <Label>$R_5/\Omega$:</Label>
+                <Validator>
+                    <Expression>cmpValues(366.666,a.val2,1)</Expression>
+                    <Explanation>Der Wert beträgt $366.6\Omega$.</Explanation>
                 </Validator>
             </Input>
         </Task>

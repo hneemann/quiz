@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with LTSpice asc-Converter by H.Neemann -->
+<!-- created: Sat Oct 19 08:31:46 CEST 2024 -->
+<!-- source: /home/hneemann/Dokumente/myGo/quiz/data/testdata/elektrotechnik1/spice/Aufgabe1.asc -->
+
+<svg
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   width="116.0mm"
+   height="50.77777777777778mm"
+   viewBox="11.0 36.5 522.0 228.5">
+<g>
+<path d="M 128.0,80.0 L 48.0,80.0 L 48.0,112.0" stroke="black" stroke-width="1.5" fill="none"/>
+<path d="M 272.0,80.0 L 240.0,80.0 L 208.0,80.0" stroke="black" stroke-width="1.5" fill="none"/>
+<path d="M 416.0,80.0 L 384.0,80.0 L 352.0,80.0" stroke="black" stroke-width="1.5" fill="none"/>
+<path d="M 496.0,224.0 L 528.0,224.0 L 528.0,80.0 L 496.0,80.0" stroke="black" stroke-width="1.5" fill="none"/>
+<line x1="240.0" y1="112.0" x2="240.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<line x1="384.0" y1="112.0" x2="384.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<path d="M 48.0,192.0 L 48.0,224.0 L 240.0,224.0 L 240.0,192.0" stroke="black" stroke-width="1.5" fill="none"/>
+<path d="M 272.0,224.0 L 240.0,224.0 L 240.0,240.0" stroke="black" stroke-width="1.5" fill="none"/>
+<path d="M 352.0,224.0 L 384.0,224.0 L 384.0,192.0" stroke="black" stroke-width="1.5" fill="none"/>
+<line x1="416.0" y1="224.0" x2="384.0" y2="224.0" stroke="black" stroke-width="1.5" />
+<line x1="230.0" y1="240.0" x2="250.0" y2="240.0" stroke="black" stroke-width="4.5" />
+<g>
+<text text-anchor="middle" x="168.0" y="61.5" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">1</tspan></text>
+<text text-anchor="middle" x="168.0" y="116.0" fill="black" style="font-size:20px">100Ω</text>
+<line x1="136.0" y1="80.0" x2="128.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<line x1="208.0" y1="80.0" x2="200.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<path d="M 136.0,91.0 L 200.0,91.0 L 200.0,69.0 L 136.0,69.0 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<text text-anchor="middle" x="312.0" y="61.5" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">2</tspan></text>
+<text text-anchor="middle" x="312.0" y="116.0" fill="black" style="font-size:20px">100Ω</text>
+<line x1="280.0" y1="80.0" x2="272.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<line x1="352.0" y1="80.0" x2="344.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<path d="M 280.0,91.0 L 344.0,91.0 L 344.0,69.0 L 280.0,69.0 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<text text-anchor="end" x="225.0" y="142.0" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">3</tspan></text>
+<text text-anchor="end" x="225.0" y="178.0" fill="black" style="font-size:20px">1kΩ</text>
+<line x1="240.0" y1="120.0" x2="240.0" y2="112.0" stroke="black" stroke-width="1.5" />
+<line x1="240.0" y1="192.0" x2="240.0" y2="184.0" stroke="black" stroke-width="1.5" />
+<path d="M 229.0,120.0 L 229.0,184.0 L 251.0,184.0 L 251.0,120.0 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<text text-anchor="middle" x="456.0" y="61.5" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">4</tspan></text>
+<text text-anchor="middle" x="456.0" y="116.0" fill="black" style="font-size:20px">50Ω</text>
+<line x1="424.0" y1="80.0" x2="416.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<line x1="496.0" y1="80.0" x2="488.0" y2="80.0" stroke="black" stroke-width="1.5" />
+<path d="M 424.0,91.0 L 488.0,91.0 L 488.0,69.0 L 424.0,69.0 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<text text-anchor="end" x="369.0" y="142.0" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">5</tspan></text>
+<text text-anchor="end" x="369.0" y="178.0" fill="black" style="font-size:20px">200Ω</text>
+<line x1="384.0" y1="120.0" x2="384.0" y2="112.0" stroke="black" stroke-width="1.5" />
+<line x1="384.0" y1="192.0" x2="384.0" y2="184.0" stroke="black" stroke-width="1.5" />
+<path d="M 373.0,120.0 L 373.0,184.0 L 395.0,184.0 L 395.0,120.0 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<text text-anchor="middle" x="312.0" y="205.5" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">6</tspan></text>
+<text text-anchor="middle" x="312.0" y="260.0" fill="black" style="font-size:20px">200Ω</text>
+<line x1="344.0" y1="223.99999999999997" x2="352.0" y2="223.99999999999997" stroke="black" stroke-width="1.5" />
+<line x1="272.0" y1="224.0" x2="280.0" y2="224.0" stroke="black" stroke-width="1.5" />
+<path d="M 344.0,212.99999999999997 L 280.0,213.0 L 280.0,235.0 L 344.0,234.99999999999997 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<text text-anchor="middle" x="456.0" y="205.5" fill="black" style="font-size:20px">R<tspan style="font-size:70%;baseline-shift:sub">7</tspan></text>
+<text text-anchor="middle" x="456.0" y="260.0" fill="black" style="font-size:20px">30Ω</text>
+<line x1="488.0" y1="223.99999999999997" x2="496.0" y2="223.99999999999997" stroke="black" stroke-width="1.5" />
+<line x1="416.0" y1="224.0" x2="424.0" y2="224.0" stroke="black" stroke-width="1.5" />
+<path d="M 488.0,212.99999999999997 L 424.0,213.0 L 424.0,235.0 L 488.0,234.99999999999997 Z" stroke="black" stroke-width="1.5" fill="none"/>
+</g>
+<g>
+<circle cx="48.0" cy="152.0" r="32.0" stroke="black" stroke-width="1.5" fill="none" />
+<text text-anchor="start" x="72.0" y="122.0" fill="black" style="font-size:20px">U<tspan style="font-size:70%;baseline-shift:sub">Q</tspan></text>
+<text text-anchor="start" x="72.0" y="202.0" fill="black" style="font-size:20px">5V</text>
+<path d="M 69.0,156.0 L 61.0,156.0 L 65.0,168.0 Z" stroke="black" stroke-width="1.5" fill="none"/>
+<line x1="65.0" y1="136.0" x2="65.0" y2="156.0" stroke="black" stroke-width="1.5" />
+<line x1="40.0" y1="132.0" x2="56.0" y2="132.0" stroke="black" stroke-width="1.5" />
+<line x1="40.0" y1="172.0" x2="56.0" y2="172.0" stroke="black" stroke-width="1.5" />
+<line x1="48.0" y1="124.0" x2="48.0" y2="140.0" stroke="black" stroke-width="1.5" />
+<line x1="48.0" y1="192.0" x2="48.0" y2="184.0" stroke="black" stroke-width="1.5" />
+<line x1="48.0" y1="112.0" x2="48.0" y2="120.0" stroke="black" stroke-width="1.5" />
+</g>
+<circle cx="384.0" cy="80.0" r="4.0" stroke="black" stroke-width="1.5" fill="black" />
+<circle cx="240.0" cy="80.0" r="4.0" stroke="black" stroke-width="1.5" fill="black" />
+<circle cx="384.0" cy="224.0" r="4.0" stroke="black" stroke-width="1.5" fill="black" />
+<circle cx="240.0" cy="224.0" r="4.0" stroke="black" stroke-width="1.5" fill="black" />
+</g>
+</svg>

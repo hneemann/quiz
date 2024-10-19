@@ -60,15 +60,25 @@
         <Description>Die Ableitung verschiedener Funktionen ist zu berechnen.</Description>
         <Task>
             <Name>Polynom</Name>
-            <Question>Geben Sie die Ableitung der Funktion $f(x)=x^3+2x-3$ an:</Question>
+            <Question>Geben Sie die Ableitung der Funktion an:</Question>
             <Input id="func" type="text">
-                <Label>Die Ableitung lautet $f'(x)=$</Label>
+                <Label>$f(x)=x^3+2x-3$, damit $f'(x)=$</Label>
                 <Validator>
                     <Expression>
                         cmpFunc("3*x^2+2",a.func,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Help>Die Ableitung der Funktion $f(x)=x^n$ lautet $f'(x)=nx^{n-1}$.</Help>
                     <Explanation>Die Ableitung lautet $f'(x)=3x^2+2$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="func2" type="text">
+                <Label>$f(x)=\frac{1}{x^2}+2x$, damit $f'(x)=$</Label>
+                <Validator>
+                    <Expression>
+                        cmpFunc("2 - 2/x^3",a.func2,["x"],[[-2],[-1],[0],[1],[2]])
+                    </Expression>
+                    <Help>Die Ableitung der Funktion $f(x)=x^n$ lautet $f'(x)=nx^{n-1}$.</Help>
+                    <Explanation>Die Ableitung lautet $f'(x)=2 - \frac{2}{x^3}$.</Explanation>
                 </Validator>
             </Input>
         </Task>
