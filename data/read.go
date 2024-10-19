@@ -9,7 +9,7 @@ import (
 	"sort"
 )
 
-func ReadLectures(folder string) (Lectures, error) {
+func ReadLectures(folder string) (*Lectures, error) {
 	l, err := os.ReadDir(folder)
 	if err != nil {
 		return nil, fmt.Errorf("error reading lecture directory: %w", err)
@@ -38,7 +38,7 @@ func ReadLectures(folder string) (Lectures, error) {
 	})
 
 	lectures.Init()
-	return lectures, nil
+	return &lectures, nil
 }
 
 func readFolder(folder string) (*Lecture, error) {

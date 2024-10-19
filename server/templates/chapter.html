@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>{{.Name}}</title>
+  <title>{{.Chapter.Name}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
@@ -10,15 +10,22 @@
 
   <div class="main">
 
-  <h2>{{.Name}}</h2>
-  {{markdown .Description .LID}}
+  <h2>{{.Chapter.Name}}</h2>
+  {{markdown .Chapter.Description .Chapter.LID}}
 
   <h3>Aufgaben</h3>
-  {{range .Task}}
-     <a href="/task/?l={{.LID}}&c={{.CID}}&t={{.TID}}"><div class="task">{{.Name}}</div></a>
+  {{range .Chapter.Task}}
+     <a href="/task/?l={{.LID}}&c={{.CID}}&t={{.TID}}">
+         <div class="task">
+             {{.Name}}
+             {{if $.Completed .GetId}}
+                 <img class="icon" src="/assets/completed.svg" />
+             {{end}}
+         </div>
+     </a>
   {{end}}
 
- <a class="nav" href="/lecture/?l={{.LID}}">Zurück</a>
+ <a class="nav" href="/lecture/?l={{.Chapter.LID}}">Zurück</a>
 </div>
 </body>
 </html>

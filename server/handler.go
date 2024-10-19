@@ -9,6 +9,7 @@ import (
 	"github.com/gomarkdown/markdown/parser"
 	"github.com/hneemann/quiz/data"
 	"github.com/hneemann/quiz/mathml"
+	"github.com/hneemann/quiz/server/session"
 	"html/template"
 	"io"
 	"log"
@@ -91,6 +92,13 @@ func createRenderHook(LId int) html.RenderNodeFunc {
 			return ast.GoToNext, true
 		case *ast.Image:
 			if entering {
+				attr := n.Attribute
+				if attr == nil {
+					attr = &ast.Attribute{}
+				}
+				attr.Classes = append(attr.Classes, []byte("task"))
+				n.Attribute = attr
+
 				name := string(n.Destination)
 				url := "/image/" + strconv.Itoa(LId) + "/" + name
 				n.Destination = []byte(url)
@@ -122,7 +130,7 @@ func doMath(w io.Writer, latex []byte, block bool) {
 
 var mainTemp = Templates.Lookup("main.html")
 
-func CreateMain(lectures []*data.Lecture) http.Handler {
+func CreateMain(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := mainTemp.Execute(w, lectures)
 		if err != nil {
@@ -133,16 +141,14 @@ func CreateMain(lectures []*data.Lecture) http.Handler {
 
 var lectureTemp = Templates.Lookup("lecture.html")
 
-func CreateLecture(lectures []*data.Lecture) http.Handler {
+func CreateLecture(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lStr := r.URL.Query().Get("l")
-		l, err := strconv.Atoi(lStr)
-		if err != nil || l < 0 || l >= len(lectures) {
+		lecture, err := lectures.GetLecture(getNumber(r, "l"))
+		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
-
-		err = lectureTemp.Execute(w, lectures[l])
+		err = lectureTemp.Execute(w, lecture)
 		if err != nil {
 			log.Println(err)
 		}
@@ -151,29 +157,42 @@ func CreateLecture(lectures []*data.Lecture) http.Handler {
 
 var chapterTemp = Templates.Lookup("chapter.html")
 
-func CreateChapter(lectures []*data.Lecture) http.Handler {
+type chapterData struct {
+	Chapter *data.Chapter
+	session *session.Session
+}
+
+func (cd chapterData) Completed(id data.TaskId) bool {
+	if cd.session == nil {
+		return false
+	}
+	return cd.session.IsTaskCompleted(id)
+}
+
+func CreateChapter(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		l, err := getNumber(r, "l", len(lectures)-1)
+		lecture, err := lectures.GetLecture(getNumber(r, "l"))
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
 
-		lecture := lectures[l]
-		c, err := getNumber(r, "c", len(lecture.Chapter)-1)
+		chapter, err := lecture.GetChapter(getNumber(r, "c"))
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
 		}
 
-		err = chapterTemp.Execute(w, lecture.Chapter[c])
+		ses, _ := r.Context().Value("session").(*session.Session)
+
+		err = chapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses})
 		if err != nil {
 			log.Println(err)
 		}
 	})
 }
 
-func getNumber(r *http.Request, id string, max int) (int, error) {
+func getNumber(r *http.Request, id string) (int, error) {
 	lStr := r.URL.Query().Get(id)
 
 	if lStr == "" {
@@ -183,9 +202,6 @@ func getNumber(r *http.Request, id string, max int) (int, error) {
 	l, err := strconv.Atoi(lStr)
 	if err != nil {
 		return 0, err
-	}
-	if l < 0 || l > max {
-		return 0, fmt.Errorf("invalid number")
 	}
 	return l, nil
 }
@@ -220,7 +236,7 @@ func (td taskData) GetResult(id string) string {
 	return td.Result[id]
 }
 
-func CreateTask(lectures []*data.Lecture) http.Handler {
+func CreateTask(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			err := r.ParseForm()
@@ -230,24 +246,23 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 			}
 		}
 
-		l, err := getNumber(r, "l", len(lectures)-1)
+		lecture, err := lectures.GetLecture(getNumber(r, "l"))
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
-		lecture := lectures[l]
-		c, err := getNumber(r, "c", len(lecture.Chapter)-1)
+
+		chapter, err := lecture.GetChapter(getNumber(r, "c"))
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
 		}
-		chapter := lecture.Chapter[c]
-		t, err := getNumber(r, "t", len(chapter.Task)-1)
+
+		task, err := chapter.GetTask(getNumber(r, "t"))
 		if err != nil {
 			http.Error(w, "invalid task number", http.StatusBadRequest)
 			return
 		}
-		task := chapter.Task[t]
 
 		td := taskData{Task: task, Answers: data.DataMap{}}
 
@@ -264,12 +279,17 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 			showResult := r.Form.Get("showResult") != ""
 			td.Result = task.Validate(td.Answers, showResult)
 			if len(td.Result) == 0 {
+
+				if ses, ok := r.Context().Value("session").(*session.Session); ok {
+					ses.TaskCompleted(task.GetId())
+				}
+
 				td.Ok = true
 			}
 			td.HasResult = true
 		}
-		if t < len(chapter.Task)-1 {
-			td.Next = fmt.Sprintf("/task?l=%d&c=%d&t=%d", l, c, t+1)
+		if task.TID() < len(chapter.Task)-1 {
+			td.Next = fmt.Sprintf("/task?l=%d&c=%d&t=%d", task.LID(), task.CID(), task.TID()+1)
 		}
 
 		err = taskTemp.Execute(w, td)
@@ -279,16 +299,16 @@ func CreateTask(lectures []*data.Lecture) http.Handler {
 	})
 }
 
-func CreateImages(lectures data.Lectures) http.Handler {
+func CreateImages(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL.Path
 		file := path.Base(url)
-		l, err := strconv.Atoi(path.Base(path.Dir(url)))
-		if err != nil || l < 0 || l >= len(lectures) {
+
+		lecture, err := lectures.GetLecture(strconv.Atoi(path.Base(path.Dir(url))))
+		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
-		lecture := lectures[l]
 		data, err := lecture.GetFile(file)
 		if err != nil {
 			http.Error(w, "not found", http.StatusNotFound)

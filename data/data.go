@@ -69,6 +69,12 @@ type Task struct {
 	Validator Validator
 }
 
+type TaskId struct {
+	Lecture int
+	Chapter int
+	Task    int
+}
+
 func (t *Task) LID() int {
 	return t.lid
 }
@@ -94,6 +100,16 @@ func (c *Chapter) LID() int {
 
 func (c *Chapter) CID() int {
 	return c.cid
+}
+
+func (c *Chapter) GetTask(number int, err error) (*Task, error) {
+	if err != nil {
+		return nil, err
+	}
+	if number < 0 || number >= len(c.Task) {
+		return nil, fmt.Errorf("task %d not found", number)
+	}
+	return c.Task[number], nil
 }
 
 type Lecture struct {
@@ -149,10 +165,20 @@ func (l *Lecture) Init() error {
 	return nil
 }
 
+func (l *Lecture) GetChapter(number int, err error) (*Chapter, error) {
+	if err != nil {
+		return nil, err
+	}
+	if number < 0 || number >= len(l.Chapter) {
+		return nil, fmt.Errorf("chapter %d not found", number)
+	}
+	return l.Chapter[number], nil
+}
+
 type Lectures []*Lecture
 
-func (l Lectures) Init() {
-	for lid, lecture := range l {
+func (l *Lectures) Init() {
+	for lid, lecture := range *l {
 		lecture.lid = lid
 		for _, chapter := range lecture.Chapter {
 			chapter.lid = lid
@@ -161,6 +187,20 @@ func (l Lectures) Init() {
 			}
 		}
 	}
+}
+
+func (l *Lectures) Count() int {
+	return len(*l)
+}
+
+func (l *Lectures) GetLecture(number int, err error) (*Lecture, error) {
+	if err != nil {
+		return nil, err
+	}
+	if number < 0 || number >= len(*l) {
+		return nil, fmt.Errorf("lecture %d not found", number)
+	}
+	return (*l)[number], nil
 }
 
 func New(r io.Reader) (*Lecture, error) {
@@ -290,6 +330,10 @@ func (t *Task) Validate(input DataMap, showResult bool) map[string]string {
 	}
 
 	return result
+}
+
+func (t *Task) GetId() TaskId {
+	return TaskId{Lecture: t.lid, Chapter: t.cid, Task: t.tid}
 }
 
 type Expression struct {
