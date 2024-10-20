@@ -24,7 +24,7 @@
         {{end}}
       </tr>
         {{if $.GetResult .Id}}
-        <tr class="result"><td colspan="2" class="result"><div class="result">{{markdown ($.GetResult .Id) $.Task.LID}}</div></td></tr>
+        <tr class="result"><td></td><td class="result"><div class="result">{{markdown ($.GetResult .Id) $.Task.LID}}</div></td></tr>
         {{end}}
     {{end}}
     </table>

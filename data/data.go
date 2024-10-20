@@ -12,6 +12,7 @@ import (
 	"github.com/hneemann/parser2/value"
 	"hash"
 	"io"
+	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -312,7 +313,8 @@ func cleanupError(err error) string {
 		return gui.message
 	}
 
-	return "Es ist ein Fehler aufgetreten!"
+	log.Print("unexpected error:", err)
+	return "Der eingegebene Ausdruck ist ungültig!"
 }
 
 func (v *Validator) Validate(m value.Map) (bool, string) {
@@ -612,6 +614,7 @@ func cleanupExpression(expr string) string {
 }
 
 var floatParser = funcGen.New[float64]().
+	SetComfort(true).
 	AddConstant("pi", math.Pi).
 	AddConstant("e", math.E).
 	AddSimpleOp("=", true, func(a, b float64) (float64, error) { return fromBool(a == b), nil }).

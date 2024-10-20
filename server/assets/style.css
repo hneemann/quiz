@@ -42,6 +42,10 @@ math {
     font-size: 120%;
 }
 
+code {
+    font-size: 125%;
+}
+
 div.chapter {
     background-color: lightblue;
     margin: 1em 0;

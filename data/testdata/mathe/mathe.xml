@@ -88,6 +88,7 @@
                     or (cmpFunc(e2,a.n2,["u"],[[-1],[0],[1],[2],[5]])
                     and cmpFunc(e1,a.n1,["u"],[[-1],[0],[1],[2],[5]]))
                 </Expression>
+                <Help>Der Ausdruck $\sqrt{x}$ wird eingegeben als `sqrt(x)`!</Help>
                 <Explanation>Die Nullstellen sind $x_1=u - \sqrt{u^2 + 2}$ und $x_2=\sqrt{u^2 + 2} + u$</Explanation>
             </Validator>
         </Task>
@@ -98,11 +99,11 @@
         <Task>
             <Name>Polynom</Name>
             <Question>Geben Sie die Ableitung der Funktion an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>$f(x)=x^3+2x-3$, damit $f'(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("3*x^2+2",a.func,["x"],[[-2],[-1],[0],[1],[2]])
+                        cmpFunc("3*x^2+2",a.func1,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Help>Die Ableitung der Funktion $f(x)=x^n$ lautet $f'(x)=nx^{n-1}$.</Help>
                     <Explanation>Die Ableitung lautet $f'(x)=3x^2+2$.</Explanation>
@@ -114,7 +115,7 @@
                     <Expression>
                         cmpFunc("2 - 2/x^3",a.func2,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
-                    <Help>Die Ableitung der Funktion $f(x)=x^n$ lautet $f'(x)=nx^{n-1}$.</Help>
+                    <Help>Der Ausdruck $x^{-n}$ wird eingegeben als `x^(-n)`.</Help>
                     <Explanation>Die Ableitung lautet $f'(x)=2 - \frac{2}{x^3}$.</Explanation>
                 </Validator>
             </Input>
@@ -122,11 +123,11 @@
         <Task>
             <Name>Trigonometrie</Name>
             <Question>Geben Sie die Ableitung der Funktion an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>$\frac{\dif}{\dif x} sin(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("cos(x)",a.func,["x"],[[-2],[-1],[0],[1],[2]])
+                        cmpFunc("cos(x)",a.func1,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Help>Die Reihenfolge der Ableitungen lautet $sin \rightarrow cos \rightarrow -sin$.</Help>
                     <Explanation>Die Ableitung lautet $f'(x)=cos(x)$.</Explanation>
@@ -146,11 +147,11 @@
         <Task>
             <Name>Produktregel</Name>
             <Question>Geben Sie die Ableitung der Funktion $f(x)=x sin(x)$ an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>Die Ableitung lautet $f'(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("sin(x)+x*cos(x)",a.func,["x"],[[-2],[-1],[0],[1],[2]])
+                        cmpFunc("sin(x)+x*cos(x)",a.func1,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Explanation>Die Ableitung lautet $f'(x)=sin(x)+x cos(x)$.</Explanation>
                 </Validator>
@@ -159,11 +160,11 @@
         <Task>
             <Name>Kettenregel</Name>
             <Question>Geben Sie die Ableitung der Funktion $f(x)=sin(x^2)$ an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>Die Ableitung lautet $f'(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("2*x*cos(x^2)",a.func,["x"],[[-2],[-1],[0],[1],[2]])
+                        cmpFunc("2*x*cos(x^2)",a.func1,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Explanation>Die Ableitung lautet $f'(x)=2 x cos(x^2)$.</Explanation>
                 </Validator>
@@ -176,11 +177,11 @@
         <Task>
             <Name>Unbestimmtes Integral</Name>
             <Question>Geben Sie das unbestimmte Integral der Funktion $f(x)=x^3+2x-3$ an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>Die Stammfunktion lautet $F(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("x^4/4 + x^2 - 3*x+c",a.func,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
+                        cmpFunc("x^4/4 + x^2 - 3*x+c",a.func1,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
                     <Explanation>Das Integral lautet $F(x)=\frac{1}{4}x^4 + x^2 - 3x$.</Explanation>
@@ -191,11 +192,11 @@
             <Name>Bestimmtes Integral</Name>
             <Question>Geben Sie das bestimmte Integral der Funktion $f(x)=x^3+2x-3$ in den Grenzen von $-1$ bis $u$ an:
             </Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>Das Integral lautet $\left.F(x)\right|_{-1}^u=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("u^4/4 + u^2 - 3*u - 17/4",a.func,["u"],[[-2],[-1],[0],[1],[2]])
+                        cmpFunc("u^4/4 + u^2 - 3*u - 17/4",a.func1,["u"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Explanation>Das Integral lautet $F(u)=\frac{1}{4}u^4 + u^2 - 3 u - \frac{17}{4}$.</Explanation>
                 </Validator>
@@ -204,11 +205,11 @@
         <Task>
             <Name>Partielle Integration</Name>
             <Question>Geben Sie das unbestimmte Integral der Funktion $f(x)=x sin(x)$ an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>Die Stammfunktion lautet $F(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("sin(x) - x*cos(x) + c",a.func,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
+                        cmpFunc("sin(x) - x*cos(x) + c",a.func1,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
                     <Explanation>Das Integral lautet $F(x)=sin(x)-x*cos(X)$.</Explanation>
@@ -218,11 +219,11 @@
         <Task>
             <Name>Partielle Integration 2</Name>
             <Question>Geben Sie das unbestimmte Integral der Funktion $f(x)=x^2 sin(x)$ an:</Question>
-            <Input id="func" type="text">
+            <Input id="func1" type="text">
                 <Label>Die Stammfunktion lautet $F(x)=$</Label>
                 <Validator>
                     <Expression>
-                        cmpFunc("(2 - x^2)*cos(x) + 2*x*sin(x) + c",a.func,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
+                        cmpFunc("(2 - x^2)*cos(x) + 2*x*sin(x) + c",a.func1,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
                     <Explanation>Das Integral lautet $F(x)=(2 - x^2) cos(x) + 2 x sin(x)$.</Explanation>
