@@ -3,8 +3,10 @@ package session
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"github.com/hneemann/objectDB/serialize"
 	"github.com/hneemann/quiz/data"
+	"html/template"
 	"log"
 	"math/rand"
 	"net/http"
@@ -28,6 +30,7 @@ func (s *Session) touch() {
 	s.time = time.Now()
 }
 
+// TaskCompleted marks a task as completed.
 func (s *Session) TaskCompleted(id data.TaskId) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -46,6 +49,7 @@ func (s *Session) TaskCompleted(id data.TaskId) {
 	lmap[id.InnerId] = true
 }
 
+// IsTaskCompleted returns true if the task is completed.
 func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -61,6 +65,8 @@ func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 	return ok
 }
 
+// ChapterCompleted returns the number of task completed in a chapter.
+// The hash is the hash of the lecture and the cid is the chapter id.
 func (s *Session) ChapterCompleted(hash string, cid int) int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -127,6 +133,9 @@ func (s *Session) restore(path string) {
 	}
 }
 
+// cleanup removes all completed tasks that are not in the lecture list.
+// This is necessary because the lecture list can change.
+// If not cleaned up, the session data would contain tasks that do not exist anymore.
 func (s *Session) cleanup(lectures *data.Lectures) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -256,13 +265,63 @@ func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 		if !ok {
 			ses = s.create("helmut", w)
 		}
-		//if ok {
-		c := context.WithValue(r.Context(), "session", ses)
-		parent.ServeHTTP(w, r.WithContext(c))
-		//} else {
-		//	url := base64.URLEncoding.EncodeToString([]byte(r.URL.RawQuery))
-		//	log.Println("redirect to login:", url)
-		//	http.Redirect(w, r, "/login?url="+url, http.StatusFound)
-		//}
+		if ok {
+			c := context.WithValue(r.Context(), "session", ses)
+			parent.ServeHTTP(w, r.WithContext(c))
+		} else {
+			log.Println("redirect to login:", r.URL.Path)
+			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
+			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
+		}
 	})
+}
+
+type LoginData struct {
+	Target string
+	Error  error
+}
+
+type Authenticator interface {
+	Authenticate(user, pass string) (string, error)
+}
+
+type AuthFunc func(user, pass string) (string, error)
+
+func (a AuthFunc) Authenticate(user, pass string) (string, error) {
+	return a(user, pass)
+}
+
+func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authenticator) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
+		encodedTarget := r.URL.Query().Get("t")
+		if r.Method == http.MethodPost {
+			user := r.FormValue("username")
+			pass := r.FormValue("password")
+			encodedTarget = r.FormValue("target")
+
+			var id string
+			if id, err = auth.Authenticate(user, pass); err == nil {
+				sessions.create(id, w)
+
+				url := "/"
+				t, err := base64.URLEncoding.DecodeString(encodedTarget)
+				if err == nil {
+					url = string(t)
+				}
+
+				log.Println("redirect to", url)
+				http.Redirect(w, r, url, http.StatusFound)
+				return
+			}
+		}
+
+		err = loginTemp.Execute(w, LoginData{
+			Target: encodedTarget,
+			Error:  err,
+		})
+		if err != nil {
+			log.Println(err)
+		}
+	}
 }

@@ -13,6 +13,10 @@ import (
 	"strconv"
 )
 
+func Authenticate(user, pass string) (string, error) {
+	return "helmut", nil
+}
+
 func main() {
 	lectureFolder := flag.String("lectures", "data/testdata", "lecture folder")
 	dataFolder := flag.String("data", "sessionData", "data folder")
@@ -36,6 +40,9 @@ func main() {
 	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures)))
 	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures)))
 	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))
+
+	loginTemp := server.Templates.Lookup("login.html")
+	mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
 
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}
 
