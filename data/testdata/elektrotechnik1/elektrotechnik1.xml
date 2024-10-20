@@ -8,6 +8,52 @@
             <Question>
 Gegeben sei die folgende Schaltung:
 
+![Schaltung](Aufgabe0.svg)
+
+Berechnen Sie die Spannung $U_Q$ der Stromquelle und die Spannung $U_2$ an $R_2$.
+            </Question>
+            <Input id="val1" type="text">
+                <Label>$U_Q/\u{V}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(40,a.val1,1)</Expression>
+                    <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="val2" type="text">
+                <Label>$U_2/\u{V}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(30,a.val2,1)</Expression>
+                    <Explanation>Der Wert beträgt $U_2=30\u{V}$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Question>
+Gegeben sei die folgende Schaltung:
+
+![Schaltung](Aufgabe0b.svg)
+
+Berechnen Sie den Quellenstrom $I_Q$ der Spannungsquelle und den Strom $I_3$ an $R_3$.
+            </Question>
+            <Input id="val1" type="text">
+                <Label>$I_Q/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(40,a.val1,1)</Expression>
+                    <Explanation>Der Wert beträgt $I_Q=40\u{mA}$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="val2" type="text">
+                <Label>$I_3/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(10,a.val2,1)</Expression>
+                    <Explanation>Der Wert beträgt $I_§=10\u{mA}$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Question>
+Gegeben sei die folgende Schaltung:
+
 ![Schaltung](Aufgabe1.svg)
 
 Berechnen Sie den Strom $I_Q$ in der Spannungsquelle.
