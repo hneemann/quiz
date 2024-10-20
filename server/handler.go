@@ -141,6 +141,28 @@ func CreateMain(lectures *data.Lectures) http.Handler {
 
 var lectureTemp = Templates.Lookup("lecture.html")
 
+type lectureData struct {
+	Lecture *data.Lecture
+	session *session.Session
+}
+
+func (cd lectureData) Completed(hash string, cid int) int {
+	if cd.session == nil {
+		return 0
+	}
+	return cd.session.ChapterCompleted(hash, cid)
+}
+
+func (cd lectureData) Avail(cid int) int {
+	if cd.session == nil {
+		return 0
+	}
+	if cid < 0 || cid >= len(cd.Lecture.Chapter) {
+		return 0
+	}
+	return len(cd.Lecture.Chapter[cid].Task)
+}
+
 func CreateLecture(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		lectureId, _ := getStrFromPath(r.URL.Path)
@@ -149,7 +171,10 @@ func CreateLecture(lectures *data.Lectures) http.Handler {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
 			return
 		}
-		err = lectureTemp.Execute(w, lecture)
+
+		ses, _ := r.Context().Value("session").(*session.Session)
+
+		err = lectureTemp.Execute(w, lectureData{Lecture: lecture, session: ses})
 		if err != nil {
 			log.Println(err)
 		}

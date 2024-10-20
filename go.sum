@@ -6,8 +6,8 @@ github.com/hneemann/iterator v0.0.0-20240630073221-aab15310e28c h1:itki31EzEjJar
 github.com/hneemann/iterator v0.0.0-20240630073221-aab15310e28c/go.mod h1:Y4LjHwBja9p9vaWnjpEzDorwPp/9UcDmycAJPX6WBEI=
 github.com/hneemann/objectDB v0.0.0-20240827072326-3997da940df8 h1:OdvBbW4CKHVd3BWQjlP3xFf09LCZL0ftUuj9y6mC238=
 github.com/hneemann/objectDB v0.0.0-20240827072326-3997da940df8/go.mod h1:yP5ngdlbH1Huospt+Tz8T1dxejyXppsJeXsM+eTf3+w=
-github.com/hneemann/parser2 v0.0.0-20241020094731-e0942a093c47 h1:RJfKXhJ1WaBDCBw96wocJAQW00m60mIijp/L8VLL28U=
-github.com/hneemann/parser2 v0.0.0-20241020094731-e0942a093c47/go.mod h1:SS7YsssqCfYO9w+HMtAff0UDfXqdjkq2rhElFNl7tZ4=
+github.com/hneemann/parser2 v0.0.0-20241020114559-e66c72058575 h1:Z6hAdzZSs9R3l9pMh2gceKIU59m9nSXoaW1lKAAlxs4=
+github.com/hneemann/parser2 v0.0.0-20241020114559-e66c72058575/go.mod h1:SS7YsssqCfYO9w+HMtAff0UDfXqdjkq2rhElFNl7tZ4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=

@@ -32,7 +32,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
 	mux.Handle("/", server.CreateMain(lectures))
-	mux.Handle("/lecture/", server.CreateLecture(lectures))
+	mux.Handle("/lecture/", sessions.Wrap(server.CreateLecture(lectures)))
 	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures)))
 	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures)))
 	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))

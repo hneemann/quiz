@@ -2,20 +2,25 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>{{.Name}}</title>
+  <title>{{.Lecture.Name}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
 <body>
   <div class="main">
-  <h2>{{.Name}}</h2>
-  {{markdown .Description .LID}}
+  <h2>{{.Lecture.Name}}</h2>
+  {{markdown .Lecture.Description .Lecture.LID}}
 
-  {{range .Chapter}}
+  {{range .Lecture.Chapter}}
     <div class="chapter">
       <a href="/chapter/{{.LID}}/{{.CID}}">
       <h2>{{.Name}}</h2>
       {{markdown .Description .LID}}
+      {{$c := $.Completed $.Lecture.Hash .CID}}
+      {{$a := $.Avail .CID}}
+      <div class="progress">
+        {{if eq $c $a}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{$a}}{{end}}
+      </div>
       </a>
     </div>
   {{end}}

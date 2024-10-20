@@ -61,6 +61,27 @@ func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 	return ok
 }
 
+func (s *Session) ChapterCompleted(hash string, cid int) int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.completed == nil {
+		return 0
+	}
+	tmap, ok := s.completed[hash]
+	if !ok {
+		return 0
+	}
+	count := 0
+	for i := range tmap {
+		if i.CId == cid {
+			count++
+		}
+	}
+
+	return count
+}
+
 func (s *Session) persist(path string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

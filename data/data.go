@@ -300,12 +300,17 @@ func (d DataMap) Size() int {
 }
 
 func cleanupError(err error) string {
-	var nf parser2.NotFoundError
-	if errors.As(err, &nf) {
-		if len(nf.Avail()) > 0 {
-			return fmt.Sprintf("'%s' kann nicht verwendet werden! Verfügbare Variablen sind: %s", nf.NotFound(), strings.Join(nf.Avail(), ", "))
+	var notFound parser2.NotFoundError
+	if errors.As(err, &notFound) {
+		if len(notFound.Avail()) > 0 {
+			return fmt.Sprintf("'%s' kann nicht verwendet werden! Verfügbare Variablen sind: %s", notFound.NotFound(), strings.Join(notFound.Avail(), ", "))
 		}
-		return fmt.Sprintf("'%s' kann nicht verwendet werden!", nf.NotFound())
+		return fmt.Sprintf("'%s' kann nicht verwendet werden!", notFound.NotFound())
+	}
+
+	var notAFunc parser2.NotAFunction
+	if errors.As(err, &notAFunc) {
+		return fmt.Sprintf("Zwischen einer Variablen und einer öffnenden Klammer fehlt ein Leerzeichen: $%s$", notAFunc.NotFound())
 	}
 
 	var gui GuiError
