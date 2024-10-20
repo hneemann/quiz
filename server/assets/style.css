@@ -39,11 +39,11 @@ input {
 }
 
 math {
-    font-size: 120%;
+    font-size: inherit;
 }
 
 code {
-    font-size: 125%;
+    font-size: inherit;
 }
 
 div.chapter {

@@ -1,7 +1,6 @@
 package data
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/xml"
@@ -17,7 +16,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"unicode"
 )
 
 type InputType int
@@ -527,95 +525,58 @@ var myParser = value.New().
 		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(p))
 		//p.SetNumberMatcher(number)
 		p.TextOperator(map[string]string{"in": "~", "is": "=", "or": "|", "and": "&"})
-	}).AddStaticFunction("parseFunc",
-	funcGen.Function[value.Value]{
+	}).
+	AddStaticFunction("out", funcGen.Function[value.Value]{
 		Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
-			if exp, ok := stack.Get(0).(value.String); ok {
-				if exp == "" {
-					return nil, GuiError{message: "Die Eingabe ist leer!"}
-				}
-				if list, ok := stack.Get(1).(*value.List); ok {
-					var args []string
-					argValues, err := list.ToSlice(stack)
-					if err != nil {
-						return nil, err
-					}
-					for _, v := range argValues {
-						if str, ok := v.(value.String); ok {
-							args = append(args, string(str))
-						} else {
-							return nil, fmt.Errorf("expected string, got %v", v)
-						}
-					}
-					return createExpression(string(exp), args)
-				} else {
-					return nil, fmt.Errorf("expected a list, got %v", stack.Get(1))
-				}
-			} else {
-				return nil, fmt.Errorf("expected string, got %v", stack.Get(0))
-			}
+			v := stack.Get(0)
+			log.Print(v)
+			return v, nil
 		},
-		Args:   2,
+		Args:   1,
 		IsPure: true,
-	}.SetDescription("strFunc", "listOfArgs", "parse a function using the list of arguments"))
+	}).
+	AddStaticFunction("parseFunc",
+		funcGen.Function[value.Value]{
+			Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
+				if exp, ok := stack.Get(0).(value.String); ok {
+					if exp == "" {
+						return nil, GuiError{message: "Die Eingabe ist leer!"}
+					}
+					if list, ok := stack.Get(1).(*value.List); ok {
+						var args []string
+						argValues, err := list.ToSlice(stack)
+						if err != nil {
+							return nil, err
+						}
+						for _, v := range argValues {
+							if str, ok := v.(value.String); ok {
+								args = append(args, string(str))
+							} else {
+								return nil, fmt.Errorf("expected string, got %v", v)
+							}
+						}
+						return createExpression(string(exp), args)
+					} else {
+						return nil, fmt.Errorf("expected a list, got %v", stack.Get(1))
+					}
+				} else {
+					return nil, fmt.Errorf("expected string, got %v", stack.Get(0))
+				}
+			},
+			Args:   2,
+			IsPure: true,
+		}.SetDescription("strFunc", "listOfArgs", "parse a function using the list of arguments"))
 
 func createExpression(expr string, args []string) (value.Value, error) {
 	if len(expr) == 0 {
 		return nil, fmt.Errorf("Der Ausdruck ist leer!")
 	}
 
-	expr = cleanupExpression(expr)
-
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
 		return nil, GuiError{message: fmt.Sprintf("Der Ausdruck '%s' enthält Fehler!", expr), cause: err}
 	}
 	return Expression{expression: expr, fu: fu}, nil
-}
-
-func cleanupExpression(expr string) string {
-	var b bytes.Buffer
-	wasNumber := false
-	for _, a := range expr {
-		switch {
-		case a == '²':
-			b.WriteRune('^')
-			b.WriteRune('2')
-		case a == '³':
-			b.WriteRune('^')
-			b.WriteRune('3')
-		case a == '⁴':
-			b.WriteRune('^')
-			b.WriteRune('4')
-		case a == '⁵':
-			b.WriteRune('^')
-			b.WriteRune('5')
-		case a == '⁶':
-			b.WriteRune('^')
-			b.WriteRune('6')
-		case a == '⁷':
-			b.WriteRune('^')
-			b.WriteRune('7')
-		case a == '⁸':
-			b.WriteRune('^')
-			b.WriteRune('8')
-		case a == '9':
-			b.WriteRune('^')
-			b.WriteRune('9')
-		case unicode.IsNumber(a):
-			b.WriteRune(a)
-			wasNumber = true
-		default:
-			if wasNumber {
-				if unicode.IsLetter(a) || a == '(' {
-					b.WriteRune('*')
-				}
-				wasNumber = false
-			}
-			b.WriteRune(a)
-		}
-	}
-	return b.String()
 }
 
 var floatParser = funcGen.New[float64]().

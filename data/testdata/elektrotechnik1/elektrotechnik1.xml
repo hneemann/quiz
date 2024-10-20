@@ -86,29 +86,6 @@ Berechnen Sie die Spannung $U_Q$ der Stromquelle.
             <Question>
 Gegeben sei die folgende Schaltung:
 
-![Schaltung](Aufgabe2.svg)
-
-Berechnen Sie den Strom in der Spannungsquelle $I_Q$ und den Strom in $R_5$.
-            </Question>
-            <Input id="val1" type="text">
-                <Label>$I_Q/\u{mA}$:</Label>
-                <Validator>
-                    <Expression>cmpValues(22.779,a.val1,1)</Expression>
-                    <Explanation>Der Wert beträgt $22.78\u{mA}$.</Explanation>
-                </Validator>
-            </Input>
-            <Input id="val2" type="text">
-                <Label>$I_{R_5}/\u{mA}$:</Label>
-                <Validator>
-                    <Expression>cmpValues(1.595,a.val2,1)</Expression>
-                    <Explanation>Der Wert beträgt $1.595\u{mA}$.</Explanation>
-                </Validator>
-            </Input>
-        </Task>
-        <Task>
-            <Question>
-Gegeben sei die folgende Schaltung:
-
 ![Schaltung](Aufgabe3.svg)
 
  1. Berechnen Sie die Strom $I_Q$ der Spannungsquelle.
@@ -127,6 +104,29 @@ Gegeben sei die folgende Schaltung:
                 <Validator>
                     <Expression>cmpValues(366.666,a.val2,1)</Expression>
                     <Explanation>Der Wert beträgt $366.6\u{\Omega}$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+        <Task>
+            <Question>
+Gegeben sei die folgende Schaltung:
+
+![Schaltung](Aufgabe2.svg)
+
+Berechnen Sie den Strom in der Spannungsquelle $I_Q$ und den Strom in $R_5$.
+            </Question>
+            <Input id="val1" type="text">
+                <Label>$I_Q/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(22.779,a.val1,1)</Expression>
+                    <Explanation>Der Wert beträgt $22.78\u{mA}$.</Explanation>
+                </Validator>
+            </Input>
+            <Input id="val2" type="text">
+                <Label>$I_{R_5}/\u{mA}$:</Label>
+                <Validator>
+                    <Expression>cmpValues(1.595,a.val2,1)</Expression>
+                    <Explanation>Der Wert beträgt $1.595\u{mA}$.</Explanation>
                 </Validator>
             </Input>
         </Task>
