@@ -467,7 +467,7 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 				}
 				r, err := e.fu.Eval(args...)
 				if err != nil {
-					return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
+					return nil, GuiError{message: "Fehler bei der Berechnung von '" + e.expression + "'", cause: err}
 				}
 				return value.Float(r), nil
 			} else {
@@ -498,17 +498,21 @@ var myParser = value.New().
 		f.AddStaticFunction("cmpFunc", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let soll=parseFunc(a,vars);
                                                         let ist=parseFunc(b,vars);
-                                                        !values.present(x->abs(soll.eval(x)-ist.eval(x))>0.001)`, "a", "b", "vars", "values")),
+                                                        !values.present(x->abs(soll.eval(x)-ist.eval(x))>0.0001)`, "a", "b", "vars", "values")),
 			Args:   4,
 			IsPure: true,
-		}.SetDescription("func a", "func b", "argList", "values", "compares two functions"))
+		}.SetDescription("func a", "func b", "argList", "values",
+			"compares two functions by evaluating them for a list of arguments.\n"+
+				"It returns true if the difference between the two functions is less than 0.0001 for all arguments"))
 		f.AddStaticFunction("cmpFuncCplx", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let n=parseFunc(b,vars).varUsages();
                                                         let nMin=parseFunc(a,vars).varUsages();
                                                         n<=nMin`, "a", "b", "vars")),
 			Args:   3,
 			IsPure: true,
-		}.SetDescription("func a", "func b", "argList", "compares complexity of two functions"))
+		}.SetDescription("func a", "func b", "argList",
+			"compares complexity of two functions. It returns true if the complexity of the second function\n"+
+				"is less or equal to the complexity of the first function"))
 		f.AddStaticFunction("cmpValues", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
                                                     let is=isExp.eval([]);
@@ -519,7 +523,8 @@ var myParser = value.New().
                                                       dif<percent`, "expected", "isStr", "percent")),
 			Args:   3,
 			IsPure: true,
-		}.SetDescription("expected", "is", "percent", "compares two values"))
+		}.SetDescription("expected", "is", "percent",
+			"compares two values and returns true if the difference is less than the given percent of the expected value"))
 
 		p := f.GetParser()
 		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(p))
@@ -534,7 +539,7 @@ var myParser = value.New().
 		},
 		Args:   1,
 		IsPure: true,
-	}).
+	}.SetDescription("val", "writes a value to the log and returns the value.")).
 	AddStaticFunction("parseFunc",
 		funcGen.Function[value.Value]{
 			Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
@@ -574,7 +579,8 @@ func createExpression(expr string, args []string) (value.Value, error) {
 
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
-		return nil, GuiError{message: fmt.Sprintf("Der Ausdruck '%s' enthält Fehler!", expr), cause: err}
+		log.Print("error parsing expression:", err)
+		return nil, GuiError{message: fmt.Sprintf("Der Ausdruck '%s' enthält Fehler und kann nicht analysiert werden!", expr), cause: err}
 	}
 	return Expression{expression: expr, fu: fu}, nil
 }

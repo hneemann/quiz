@@ -17,6 +17,8 @@ Berechnen Sie die Spannung $U_Q$ der Stromquelle und die Spannung $U_2$ an $R_2$
                 <Validator>
                     <Expression>cmpValues(40,a.val1,1)</Expression>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
+                    <Test val1="40" expect="true"/>
+                    <Test val1="41" expect="false"/>
                 </Validator>
             </Input>
             <Input id="val2" type="text">
@@ -46,7 +48,7 @@ Berechnen Sie den Quellenstrom $I_Q$ der Spannungsquelle und den Strom $I_3$ an 
                 <Label>$I_3/\u{mA}$:</Label>
                 <Validator>
                     <Expression>cmpValues(10,a.val2,1)</Expression>
-                    <Explanation>Der Wert beträgt $I_§=10\u{mA}$.</Explanation>
+                    <Explanation>Der Wert beträgt $I_3=10\u{mA}$.</Explanation>
                 </Validator>
             </Input>
         </Task>

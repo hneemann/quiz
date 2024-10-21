@@ -289,7 +289,7 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 			return
 		}
 
-		td := taskData{Task: task, Answers: data.DataMap{}}
+		td := taskData{Task: task, Answers: data.DataMap{}, ShowResultButton: true}
 
 		if r.Method == http.MethodPost {
 			err = r.ParseForm()
