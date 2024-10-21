@@ -184,7 +184,7 @@
                         cmpFunc("x^4/4 + x^2 - 3*x+c",a.func1,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
-                    <Explanation>Das Integral lautet $F(x)=\frac{1}{4}x^4 + x^2 - 3x$.</Explanation>
+                    <Explanation>Das Integral lautet $F(x)=\frac{1}{4}x^4 + x^2 - 3x + c$.</Explanation>
                 </Validator>
             </Input>
         </Task>
@@ -212,7 +212,7 @@
                         cmpFunc("sin(x) - x*cos(x) + c",a.func1,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
-                    <Explanation>Das Integral lautet $F(x)=sin(x)-x*cos(X)$.</Explanation>
+                    <Explanation>Das Integral lautet $F(x)=sin(x)-x cos(x) + c$.</Explanation>
                 </Validator>
             </Input>
         </Task>
@@ -226,7 +226,7 @@
                         cmpFunc("(2 - x^2)*cos(x) + 2*x*sin(x) + c",a.func1,["x","c"],[[-2,1],[-1,0],[0,2],[1,2],[2,-1]])
                     </Expression>
                     <Help>Vergessen Sie nicht die Integrationskonstante $c$.</Help>
-                    <Explanation>Das Integral lautet $F(x)=(2 - x^2) cos(x) + 2 x sin(x)$.</Explanation>
+                    <Explanation>Das Integral lautet $F(x)=(2 - x^2) cos(x) + 2 x sin(x) + c$.</Explanation>
                 </Validator>
             </Input>
         </Task>
