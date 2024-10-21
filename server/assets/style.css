@@ -1,6 +1,6 @@
 @media (pointer: coarse) {
     html {
-        font-size: xx-large;
+        font-size: x-large;
         -moz-text-size-adjust: none;
         -webkit-text-size-adjust: none;
     }
@@ -39,11 +39,11 @@ input {
 }
 
 math {
-    font-size: inherit;
+    font-size: 110%;
 }
 
 code {
-    font-size: inherit;
+    font-size: 110%;
 }
 
 div.chapter {
