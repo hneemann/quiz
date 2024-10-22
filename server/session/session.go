@@ -45,8 +45,10 @@ func (s *Session) TaskCompleted(id data.TaskId) {
 		s.completed[id.LHash] = lmap
 	}
 
-	s.dataModified = true
-	lmap[id.InnerId] = true
+	if !lmap[id.InnerId] {
+		s.dataModified = true
+		lmap[id.InnerId] = true
+	}
 }
 
 // IsTaskCompleted returns true if the task is completed.
@@ -65,7 +67,7 @@ func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 	return ok
 }
 
-// ChapterCompleted returns the number of task completed in a chapter.
+// ChapterCompleted returns the number of tasks completed in a chapter.
 // The hash is the hash of the lecture and the cid is the chapter id.
 func (s *Session) ChapterCompleted(hash string, cid int) int {
 	s.mutex.Lock()
