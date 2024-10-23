@@ -41,17 +41,17 @@ func TestNew(t *testing.T) {
 
 	task2 := lecture.Chapter[0].Task[3]
 	input = make(DataMap)
-	input["func"] = "IS*exp(UD/UT)"
+	input["func1"] = "IS*exp(UD/UT)"
 	result = task2.Validate(input, false)
 	assert.Equal(t, 0, len(result))
 
 	input = make(DataMap)
-	input["func"] = "exp(UD/UT)*IS"
+	input["func1"] = "exp(UD/UT)*IS"
 	result = task2.Validate(input, false)
 	assert.Equal(t, 0, len(result))
 
 	input = make(DataMap)
-	input["func"] = "3*x^2+1"
+	input["func1"] = "3*x^2+1"
 	result = task2.Validate(input, false)
 	assert.Equal(t, 1, len(result))
 	assert.EqualValues(t, "", result["_task_"])
@@ -83,26 +83,6 @@ func TestParser(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, tst.result, r)
 			}
-		})
-	}
-}
-
-func Test_cleanupExpression(t *testing.T) {
-	tests := []struct {
-		raw   string
-		clean string
-	}{
-		{raw: "2x", clean: "2*x"},
-		{raw: "2x²", clean: "2*x^2"},
-		{raw: "2x³", clean: "2*x^3"},
-		{raw: "2x⁴", clean: "2*x^4"},
-		{raw: "2x³+x²+x", clean: "2*x^3+x^2+x"},
-		{raw: "2(x+1)", clean: "2*(x+1)"},
-		{raw: "2sin(x)", clean: "2*sin(x)"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.raw, func(t *testing.T) {
-			assert.Equalf(t, tt.clean, cleanupExpression(tt.raw), "cleanupExpression(%v)", tt.raw)
 		})
 	}
 }

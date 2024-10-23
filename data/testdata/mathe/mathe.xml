@@ -140,7 +140,7 @@
                         cmpFunc("-sin(x)",a.func2,["x"],[[-2],[-1],[0],[1],[2]])
                     </Expression>
                     <Help>Die Reihenfolge der Ableitungen lautet $sin \rightarrow cos \rightarrow -sin$.</Help>
-                    <Explanation>Die Ableitung lautet $f'(x)=cos(x)$.</Explanation>
+                    <Explanation>Die Ableitung lautet $f'(x)=-sin(x)$.</Explanation>
                 </Validator>
             </Input>
         </Task>

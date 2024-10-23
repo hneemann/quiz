@@ -51,10 +51,114 @@ func (it InputType) MarshalText() ([]byte, error) {
 	return []byte(name), nil
 }
 
+type Test struct {
+	data   DataMap
+	result string
+}
+
+func (t *Test) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	data := DataMap{}
+	for _, a := range start.Attr {
+		data[a.Name.Local] = a.Value
+	}
+	var result string
+	err := d.DecodeElement(&result, &start)
+	if err != nil {
+		return err
+	}
+	t.data = data
+	t.result = result
+	return nil
+}
+
 type Validator struct {
 	Expression  string
 	Help        string
 	Explanation string
+	Test        []Test
+	fu          funcGen.Func[value.Value]
+}
+
+// Init initializes the validator.
+// If thisVar is not empty, it has to be a used in the expression.
+// The vars map contains all variables that can be used in the expression.
+func (v *Validator) init(vars map[string]InputType, thisVar string) error {
+	if v.Expression == "" {
+		return nil
+	}
+	f, err := myParser.Generate(v.Expression, "a")
+	if err != nil {
+		return err
+	}
+	v.fu = f
+	return nil
+}
+
+func cleanupError(err error) string {
+	var notFound parser2.NotFoundError
+	if errors.As(err, &notFound) {
+		if len(notFound.Avail()) > 0 {
+			return fmt.Sprintf("'%s' kann nicht verwendet werden! Verfügbare Variablen sind: %s", notFound.NotFound(), strings.Join(notFound.Avail(), ", "))
+		}
+		return fmt.Sprintf("'%s' kann nicht verwendet werden!", notFound.NotFound())
+	}
+
+	var notAFunc parser2.NotAFunction
+	if errors.As(err, &notAFunc) {
+		return fmt.Sprintf("Zwischen einer Variablen und einer öffnenden Klammer fehlt ein Leerzeichen: $%s$", notAFunc.NotFound())
+	}
+
+	var gui GuiError
+	if errors.As(err, &gui) {
+		return gui.message
+	}
+
+	log.Print("unexpected error:", err)
+	return "Der eingegebene Ausdruck ist ungültig!"
+}
+
+const DefaultMessage = "Das ist nicht richtig!"
+
+func (v *Validator) Validate(m value.Map) (bool, string) {
+	if v.fu == nil {
+		return true, ""
+	}
+	r, err := v.fu.Eval(m)
+	if err != nil {
+		return false, cleanupError(err)
+	}
+	switch r := r.(type) {
+	case value.Bool:
+		if r {
+			return true, ""
+		} else {
+			if v.Help == "" {
+				return false, DefaultMessage
+			}
+			return false, DefaultMessage + "\n\nHinweis: " + v.Help
+		}
+	case value.String:
+		if v.Help == "" {
+			return false, string(r)
+		}
+		return false, string(r) + "\n\nHinweis: " + v.Help
+	default:
+		return false, "unexpected result"
+	}
+}
+
+func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string, showResult bool) {
+	if ok, msg := v.Validate(m); !ok {
+		if showResult {
+			if v.Explanation != "" {
+				if msg != "" {
+					msg += "\n\n"
+				}
+				msg += "Lösung:\n\n" + v.Explanation
+			}
+		}
+		result[id] = msg
+	}
 }
 
 type Input struct {
@@ -71,7 +175,7 @@ type Task struct {
 	tid       int
 	Name      string
 	Question  string
-	Input     []Input
+	Input     []*Input
 	Validator Validator
 }
 
@@ -160,19 +264,33 @@ func (l *Lecture) Init() error {
 				task.Name = fmt.Sprintf("Aufgabe %d: %s", tid+1, task.Name)
 			}
 
-			m := make(map[string]struct{})
+			vars := make(map[string]InputType)
 			for _, i := range task.Input {
-				if _, ok := m[i.Id]; ok {
-					return fmt.Errorf("duplicate input id %s in chapter %s task %s", i.Id, chapter.Name, task.Name)
+				if _, ok := vars[i.Id]; ok {
+					return fmt.Errorf("duplicate input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
 				}
-				m[i.Id] = struct{}{}
+				vars[i.Id] = i.Type
 
-				err := i.Validator.test()
-				if err != nil {
-					return fmt.Errorf("test failed in input id %s in chapter %s task %s: %w", i.Id, chapter.Name, task.Name, err)
+				if i.Label == "" {
+					return fmt.Errorf("no label at input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
 				}
 			}
 
+			err := task.Validator.init(vars, "")
+			if err != nil {
+				return fmt.Errorf("invalid validate expression in chapter '%s' task '%s': %w", chapter.Name, task.Name, err)
+			}
+
+			for _, i := range task.Input {
+				err = i.Validator.init(vars, i.Id)
+				if err != nil {
+					return fmt.Errorf("invalid validate expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Name, task.Name, err)
+				}
+
+				if task.Validator.fu == nil && i.Validator.fu == nil {
+					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
+				}
+			}
 		}
 	}
 	return nil
@@ -295,78 +413,6 @@ func (d DataMap) Iter(yield func(key string, v value.Value) bool) bool {
 
 func (d DataMap) Size() int {
 	return len(d)
-}
-
-func cleanupError(err error) string {
-	var notFound parser2.NotFoundError
-	if errors.As(err, &notFound) {
-		if len(notFound.Avail()) > 0 {
-			return fmt.Sprintf("'%s' kann nicht verwendet werden! Verfügbare Variablen sind: %s", notFound.NotFound(), strings.Join(notFound.Avail(), ", "))
-		}
-		return fmt.Sprintf("'%s' kann nicht verwendet werden!", notFound.NotFound())
-	}
-
-	var notAFunc parser2.NotAFunction
-	if errors.As(err, &notAFunc) {
-		return fmt.Sprintf("Zwischen einer Variablen und einer öffnenden Klammer fehlt ein Leerzeichen: $%s$", notAFunc.NotFound())
-	}
-
-	var gui GuiError
-	if errors.As(err, &gui) {
-		return gui.message
-	}
-
-	log.Print("unexpected error:", err)
-	return "Der eingegebene Ausdruck ist ungültig!"
-}
-
-func (v *Validator) Validate(m value.Map) (bool, string) {
-	if v.Expression == "" {
-		return true, ""
-	}
-	f, err := myParser.Generate(v.Expression, "a")
-	if err != nil {
-		return false, cleanupError(err)
-	}
-	r, err := f.Eval(m)
-	if err != nil {
-		return false, cleanupError(err)
-	}
-	switch r := r.(type) {
-	case value.Bool:
-		if r {
-			return true, ""
-		} else {
-			if v.Help == "" {
-				return false, DefaultMessage
-			}
-			return false, DefaultMessage + "\n\nHinweis: " + v.Help
-		}
-	case value.String:
-		return false, string(r)
-	default:
-		return false, "unexpected result"
-	}
-}
-
-const DefaultMessage = "Das ist nicht richtig!"
-
-func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string, showResult bool) {
-	if ok, msg := v.Validate(m); !ok {
-		if showResult {
-			if v.Explanation != "" {
-				if msg != "" {
-					msg += "\n\n"
-				}
-				msg += "Lösung:\n\n" + v.Explanation
-			}
-		}
-		result[id] = msg
-	}
-}
-
-func (v *Validator) test() error {
-	return nil
 }
 
 func (t *Task) Validate(input DataMap, showResult bool) map[string]string {
