@@ -97,7 +97,7 @@ Gegeben sei die folgende Schaltung:
             <Input id="val1" type="text">
                 <Label>$I_Q/\u{mA}$:</Label>
                 <Validator>
-                    <Expression>cmpValues(11.538,a.val2,1)</Expression>
+                    <Expression>cmpValues(11.538,a.val1,1)</Expression>
                     <Explanation>Der Wert beträgt $11.538\u{mA}$.</Explanation>
                 </Validator>
             </Input>

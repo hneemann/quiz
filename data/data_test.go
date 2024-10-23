@@ -86,3 +86,33 @@ func TestParser(t *testing.T) {
 		})
 	}
 }
+
+func TestValidator(t *testing.T) {
+	test := []struct {
+		expr    string
+		inputs  map[string]InputType
+		used    []string
+		isValid bool
+	}{
+		{"1+2", map[string]InputType{"x": Text}, nil, false},
+		{"1+a.x", map[string]InputType{"x": Text}, nil, true},
+		{"1+a.y", map[string]InputType{"x": Text}, nil, false},
+		{"1+2", map[string]InputType{"x": Text}, []string{"x"}, false},
+		{"1+a.x", map[string]InputType{"x": Text}, []string{"x"}, true},
+		{"1+a.y", map[string]InputType{"x": Text}, []string{"x"}, false},
+		{"1+2", map[string]InputType{"x": Text, "y": Text}, nil, false},
+		{"a.x+a.y", map[string]InputType{"x": Text, "y": Text}, nil, true},
+	}
+
+	for _, tst := range test {
+		t.Run(tst.expr, func(t *testing.T) {
+			val := Validator{Expression: tst.expr}
+			err := val.init(tst.inputs, tst.used)
+			if tst.isValid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}

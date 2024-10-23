@@ -79,18 +79,59 @@ type Validator struct {
 	fu          funcGen.Func[value.Value]
 }
 
+type collectVars struct {
+	used map[string]bool
+}
+
+func (c *collectVars) Visit(ast parser2.AST) bool {
+	if a, ok := ast.(*parser2.MapAccess); ok {
+		if i, ok := a.MapValue.(*parser2.Ident); ok {
+			if i.Name == "a" {
+				c.used[a.Key] = true
+			}
+		}
+	}
+	return true
+}
+
 // Init initializes the validator.
 // If thisVar is not empty, it has to be a used in the expression.
 // The vars map contains all variables that can be used in the expression.
-func (v *Validator) init(vars map[string]InputType, thisVar string) error {
-	if v.Expression == "" {
-		return nil
+func (v *Validator) init(varsAvail map[string]InputType, mustBeUsed []string) error {
+	if strings.TrimSpace(v.Expression) == "" {
+		return fmt.Errorf("no expression given")
 	}
+
 	f, err := myParser.Generate(v.Expression, "a")
 	if err != nil {
 		return err
 	}
 	v.fu = f
+
+	a, err := myParser.GetParser().Parse(v.Expression)
+	if err != nil {
+		return err
+	}
+
+	varsUsed := collectVars{used: make(map[string]bool)}
+	a.Traverse(&varsUsed)
+
+	if len(varsUsed.used) == 0 {
+		return fmt.Errorf("no variable is used")
+	}
+
+	for vu := range varsUsed.used {
+		if _, ok := varsAvail[vu]; !ok {
+			return fmt.Errorf("'%s' is used but not available", vu)
+		}
+	}
+
+	for _, va := range mustBeUsed {
+		if !varsUsed.used[va] {
+			return fmt.Errorf("'%s' is not used in expression", va)
+		}
+	}
+
 	return nil
 }
 
@@ -120,9 +161,10 @@ func cleanupError(err error) string {
 const DefaultMessage = "Das ist nicht richtig!"
 
 func (v *Validator) Validate(m value.Map) (bool, string) {
-	if v.fu == nil {
+	if v == nil {
 		return true, ""
 	}
+
 	r, err := v.fu.Eval(m)
 	if err != nil {
 		return false, cleanupError(err)
@@ -165,7 +207,7 @@ type Input struct {
 	Id        string `xml:"id,attr"`
 	Label     string
 	Type      InputType `xml:"type,attr"`
-	Validator Validator
+	Validator *Validator
 }
 
 type Task struct {
@@ -176,7 +218,7 @@ type Task struct {
 	Name      string
 	Question  string
 	Input     []*Input
-	Validator Validator
+	Validator *Validator
 }
 
 type InnerId struct {
@@ -276,21 +318,33 @@ func (l *Lecture) Init() error {
 				}
 			}
 
-			err := task.Validator.init(vars, "")
-			if err != nil {
-				return fmt.Errorf("invalid validate expression in chapter '%s' task '%s': %w", chapter.Name, task.Name, err)
-			}
-
+			var needsToBeUsedInTaskValidator []string
 			for _, i := range task.Input {
-				err = i.Validator.init(vars, i.Id)
-				if err != nil {
-					return fmt.Errorf("invalid validate expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Name, task.Name, err)
+				if i.Validator != nil {
+					err := i.Validator.init(vars, []string{i.Id})
+					if err != nil {
+						return fmt.Errorf("invalid expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Name, task.Name, err)
+					}
+				} else {
+					needsToBeUsedInTaskValidator = append(needsToBeUsedInTaskValidator, i.Id)
 				}
 
-				if task.Validator.fu == nil && i.Validator.fu == nil {
+				if task.Validator == nil && i.Validator == nil {
 					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
 				}
 			}
+
+			if task.Validator != nil {
+				err := task.Validator.init(vars, needsToBeUsedInTaskValidator)
+				if err != nil {
+					return fmt.Errorf("invalid expression in chapter '%s' task '%s': %w", chapter.Name, task.Name, err)
+				}
+			} else {
+				if len(needsToBeUsedInTaskValidator) > 0 {
+					return fmt.Errorf("validator is missing in chapter '%s' task '%s'", chapter.Name, task.Name)
+				}
+			}
+
 		}
 	}
 	return nil
