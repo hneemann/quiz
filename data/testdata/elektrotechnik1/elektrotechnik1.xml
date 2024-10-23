@@ -17,8 +17,9 @@ Berechnen Sie die Spannung $U_Q$ der Stromquelle und die Spannung $U_2$ an $R_2$
                 <Validator>
                     <Expression>cmpValues(40,a.val1,1)</Expression>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
-                    <Test val1="40" expect="true"/>
-                    <Test val1="41" expect="false"/>
+                    <Test val1="40" ok="yes"/>
+                    <Test val1="41" ok="no"/>
+                    <Test val1="39" ok="no"/>
                 </Validator>
             </Input>
             <Input id="val2" type="text">

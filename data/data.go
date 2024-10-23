@@ -52,12 +52,12 @@ func (it InputType) MarshalText() ([]byte, error) {
 }
 
 type Test struct {
-	data   DataMap
+	data   map[string]string
 	result string
 }
 
 func (t *Test) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	data := DataMap{}
+	data := make(map[string]string)
 	for _, a := range start.Attr {
 		data[a.Name.Local] = a.Value
 	}
@@ -68,6 +68,77 @@ func (t *Test) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	}
 	t.data = data
 	t.result = result
+	return nil
+}
+
+func (t *Test) String() string {
+	var b strings.Builder
+	for k, v := range t.data {
+		if b.Len() > 0 {
+			b.WriteString(" ")
+		}
+		b.WriteString(fmt.Sprintf("%s=\"%v\"", k, v))
+	}
+	return b.String()
+}
+
+func (t *Test) test(fu funcGen.Func[value.Value], avail map[string]InputType) error {
+	m := DataMap{}
+	var expectedOkStr string
+	for k, v := range t.data {
+		if k != "ok" {
+			if ty, ok := avail[k]; ok {
+				switch ty {
+				case Number, Text:
+					m[k] = v
+				case Checkbox:
+					switch v {
+					case "yes", "true":
+						m[k] = true
+					case "no", "false":
+						m[k] = false
+					default:
+						return fmt.Errorf("attribute '%s' needs to be 'yes', 'no', 'true' or 'false', not '%s'", k, v)
+					}
+				}
+			} else {
+				return fmt.Errorf("unknown variable '%s'", k)
+			}
+		} else {
+			expectedOkStr = v
+		}
+
+	}
+	v, err := fu.Eval(value.NewMap(m))
+	if err != nil {
+		return err
+	}
+
+	if expectedOkStr != "" {
+		expectedOk := false
+		if expectedOkStr == "yes" {
+			expectedOk = true
+		} else if expectedOkStr != "no" {
+			return fmt.Errorf("attribute 'ok' needs to be yes or no, not '%s'", expectedOkStr)
+		}
+
+		if isOk, ok := v.(value.Bool); ok {
+			if bool(isOk) != expectedOk {
+				return fmt.Errorf("expected %t, got %t", expectedOk, isOk)
+			}
+		} else {
+			return fmt.Errorf("expected bool, got %T", v)
+		}
+	} else {
+		if str, ok := v.(value.String); ok {
+			if string(str) != t.result {
+				return fmt.Errorf("expected '%s', got '%s'", t.result, str)
+			}
+		} else {
+			return fmt.Errorf("expected string, got %T", v)
+		}
+	}
+
 	return nil
 }
 
@@ -129,6 +200,13 @@ func (v *Validator) init(varsAvail map[string]InputType, mustBeUsed []string) er
 	for _, va := range mustBeUsed {
 		if !varsUsed.used[va] {
 			return fmt.Errorf("'%s' is not used in expression", va)
+		}
+	}
+
+	for _, t := range v.Test {
+		err = t.test(v.fu, varsAvail)
+		if err != nil {
+			return fmt.Errorf("error in test <test %s>: %w", t.String(), err)
 		}
 	}
 
