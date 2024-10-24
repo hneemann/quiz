@@ -1,6 +1,8 @@
 <Lecture id="MATHE">
     <Name>Mathematik</Name>
     <Description>In diesem Quiz werden Fragen zur Mathematik gestellt.</Description>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
         <Name>Algebra</Name>
         <Description>Einige einfache Aufgaben aus der Algebra.</Description>

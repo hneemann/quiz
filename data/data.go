@@ -345,6 +345,8 @@ func (c *Chapter) GetTask(number int) (*Task, error) {
 
 type Lecture struct {
 	Id          string `xml:"id,attr"`
+	Author      string
+	AuthorEMail string
 	Name        string
 	hash        string
 	Description string
@@ -371,6 +373,13 @@ func (l *Lecture) GetFile(name string) ([]byte, error) {
 }
 
 func (l *Lecture) Init() error {
+	if l.Author == "" {
+		return fmt.Errorf("author is missing in lecture %s", l.Name)
+	}
+	if l.AuthorEMail == "" {
+		return fmt.Errorf("author email is missing in lecture %s", l.Name)
+	}
+
 	for cid, chapter := range l.Chapter {
 		chapter.cid = cid
 		for tid, task := range chapter.Task {
@@ -386,6 +395,10 @@ func (l *Lecture) Init() error {
 
 			vars := make(map[string]InputType)
 			for _, i := range task.Input {
+				if i.Id == "" {
+					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Name, task.Name)
+				}
+
 				if _, ok := vars[i.Id]; ok {
 					return fmt.Errorf("duplicate input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
 				}

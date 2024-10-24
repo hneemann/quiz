@@ -1,5 +1,7 @@
 <Lecture id="EL1">
     <Name>Elektronik 1</Name>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Description>In diesem Quiz werden Fragen zur Elektronik 1 gestellt.</Description>
     <Chapter>
         <Name>Die Diode</Name>
@@ -137,14 +139,24 @@ eine Spannungsquelle mit $U=2\u{V}$ angeschlossen.
             <Input id="raum" type="text">
                 <Label>Raumtemperatur: $I_D/\u{A}=$</Label>
                 <Validator>
-                    <Expression>cmpValues(0.19,a.raum,5)</Expression>
+                    <Expression>cmpValues(0.19,a.raum,6)</Expression>
                     <Explanation>Es ergibt sich etwa $I_D=0.19A$.</Explanation>
+                    <Test raum="0.19" ok="yes"/>
+                    <Test raum="0.18" ok="yes"/>
+                    <Test raum="0.20" ok="yes"/>
+                    <Test raum="0.17" ok="no"/>
+                    <Test raum="0.21" ok="no"/>
                 </Validator>
             </Input>
             <Input id="T175" type="text">
                 <Label>Bei $175^o\u{C}$: $I_D/\u{A}=$</Label>
                 <Validator>
                     <Expression>cmpValues(0.22,a.T175,5)</Expression>
+                    <Test T175="0.22" ok="yes"/>
+                    <Test T175="0.21" ok="yes"/>
+                    <Test T175="0.23" ok="yes"/>
+                    <Test T175="0.24" ok="no"/>
+                    <Test T175="0.20" ok="no"/>
                     <Explanation>Es ergibt sich etwa $I_D=0.22\u{mA}$.</Explanation>
                 </Validator>
             </Input>
