@@ -13,12 +13,12 @@ import (
 	"strconv"
 )
 
-func Authenticate(user, pass string) (string, error) {
-	return "helmut", nil
+func Authenticate(user, pass string) (string, bool, error) {
+	return "helmut", true, nil
 }
 
 func main() {
-	lectureFolder := flag.String("lectures", "data/testdata", "lecture folder")
+	lectureFolder := flag.String("lectures", "/home/hneemann/Dokumente/DHBW/Projekte/Quiz/Beispiele", "lecture folder")
 	dataFolder := flag.String("data", "sessionData", "data folder")
 	cert := flag.String("cert", "", "certificate file e.g. cert.pem")
 	key := flag.String("key", "", "key file e.g. key.pem")
@@ -35,10 +35,11 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
-	mux.Handle("/", server.CreateMain(lectures))
+	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures)))
 	mux.Handle("/lecture/", sessions.Wrap(server.CreateLecture(lectures)))
 	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures)))
 	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures)))
+	mux.Handle("/admin/", sessions.WrapAdmin(server.CreateAdmin(lectures)))
 	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))
 
 	loginTemp := server.Templates.Lookup("login.html")

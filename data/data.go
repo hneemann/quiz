@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/xml"
@@ -13,9 +14,12 @@ import (
 	"io"
 	"log"
 	"math"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type InputType int
@@ -476,8 +480,22 @@ func (l *Lecture) GetChapter(number int) (*Chapter, error) {
 }
 
 type Lectures struct {
+	rwMutex  sync.RWMutex
 	lectures map[string]*Lecture
 	list     []*Lecture
+	folder   string
+}
+
+func (l *Lectures) insert(lecture *Lecture) {
+	l.rwMutex.Lock()
+	defer l.rwMutex.Unlock()
+
+	if l.lectures == nil {
+		l.lectures = make(map[string]*Lecture)
+	}
+
+	l.lectures[lecture.Id] = lecture
+	l.init()
 }
 
 func (l *Lectures) init() {
@@ -498,12 +516,19 @@ func (l *Lectures) init() {
 }
 
 func (l *Lectures) List() []*Lecture {
+	l.rwMutex.RLock()
+	defer l.rwMutex.RUnlock()
 	return l.list
 }
 
 func (l *Lectures) GetLecture(id string) (*Lecture, error) {
-	if lecture, ok := l.lectures[id]; ok {
-		return lecture, nil
+	l.rwMutex.RLock()
+	defer l.rwMutex.RUnlock()
+
+	if l.lectures != nil {
+		if lecture, ok := l.lectures[id]; ok {
+			return lecture, nil
+		}
 	}
 	return nil, fmt.Errorf("lecture %s not found", id)
 }
@@ -513,6 +538,25 @@ func (l *Lectures) add(lecture *Lecture) {
 		l.lectures = make(map[string]*Lecture)
 	}
 	l.lectures[lecture.Id] = lecture
+}
+
+func (l *Lectures) Uploaded(file []byte) error {
+	lecture, err := ReadZip(bytes.NewReader(file), int64(len(file)))
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(filepath.Join(l.folder, lecture.Id+".zip"))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(file)
+
+	l.insert(lecture)
+
+	return nil
 }
 
 type hashReader struct {

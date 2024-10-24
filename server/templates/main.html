@@ -10,13 +10,17 @@
 
   <div class="main">
   <h2>Vorlesungen</h2>
-  {{range .List}}
+  {{range .Lectures.List}}
     <a href="/lecture/{{.LID}}">
     <div class="lecture">
       <h2>{{.Title}}</h2>
       <p>{{markdown .Description .LID}}</p>
     </div>
     </a>
+  {{end}}
+
+  {{if .Admin}}
+  <p><a class="nav" href="/admin">Administration</a></p>
   {{end}}
   </div>
 

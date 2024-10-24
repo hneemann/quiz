@@ -15,9 +15,11 @@ func TestInit(t *testing.T) {
 		{
 			expectedError: "'val2' is used but not available",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -33,9 +35,11 @@ func TestInit(t *testing.T) {
 		{
 			expectedError: "validator is missing",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -47,9 +51,11 @@ func TestInit(t *testing.T) {
 		{
 			expectedError: "'val2' is used but not available",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -65,9 +71,11 @@ func TestInit(t *testing.T) {
 		{
 			expectedError: "'val1' is not used in expression",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -86,9 +94,11 @@ func TestInit(t *testing.T) {
 		{
 			expectedError: "duplicate input",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -107,9 +117,11 @@ func TestInit(t *testing.T) {
 		{
 			expectedError: "no label at input",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -149,9 +161,11 @@ func TestTest(t *testing.T) {
 		{
 			expectedError: "",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -170,9 +184,11 @@ func TestTest(t *testing.T) {
 		{
 			expectedError: "unknown variable 'val2'",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="text">
@@ -189,9 +205,11 @@ func TestTest(t *testing.T) {
 		{
 			expectedError: "not '40'",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="checkbox">
@@ -208,9 +226,11 @@ func TestTest(t *testing.T) {
 		{
 			expectedError: "",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="checkbox">
@@ -227,9 +247,11 @@ func TestTest(t *testing.T) {
 		{
 			expectedError: "expected 'Teststring2', got '\"Teststring\"'",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="checkbox">
@@ -246,9 +268,11 @@ func TestTest(t *testing.T) {
 		{
 			expectedError: "",
 			xml: `<Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Task>
             <Question></Question>
             <Input id="val1" type="checkbox">
@@ -267,8 +291,7 @@ func TestTest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expectedError, func(t *testing.T) {
-			b := bytes.NewBufferString(tt.xml)
-			_, err := New(b)
+			_, err := New(strings.NewReader(tt.xml))
 			if tt.expectedError == "" {
 				assert.NoError(t, err)
 			} else {

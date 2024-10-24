@@ -3,16 +3,48 @@ package data
 import (
 	"github.com/hneemann/parser2/value"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"strings"
 	"testing"
 )
 
-func TestNew(t *testing.T) {
-	f, err := os.Open("testdata/elektronik/elektronik.xml")
-	assert.NoError(t, err)
-
-	lecture, err := New(f)
+func TestSimple(t *testing.T) {
+	xml := `<Lecture id="EL1">
+    <Title>Elektronik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
+    <Description>In diesem Quiz werden Fragen zur Elektronik 1 gestellt.</Description>
+    <Chapter>
+        <Title>Die Diode</Title>
+        <Description>Hier geht es um die Eigenschaften der Diode.</Description>
+        <Task>
+            <Name>Allgemein</Name>
+            <Question>Eine Diode ...</Question>
+            <Input id="elBau" type="checkbox">
+                <Label>ist ein elektronisches Bauteil.</Label>
+            </Input>
+            <Input id="zwei" type="checkbox">
+                <Label>hat zwei Anschlüsse</Label>
+            </Input>
+            <Input id="drei" type="checkbox">
+                <Label>hat drei Anschlüsse</Label>
+            </Input>
+            <Input id="linear" type="checkbox">
+                <Label>zeigt lineares Verhalten.</Label>
+            </Input>
+            <Input id="nlinear" type="checkbox">
+                <Label>zeigt nicht lineares Verhalten.</Label>
+            </Input>
+            <Validator>
+                <Expression>
+                    a.elBau and a.zwei and !a.drei and !a.linear and a.nlinear
+                </Expression>
+                <Explanation>Die Diode ist ein nichtlineares elektronisches Bauteil mit zwei Anschlüssen.</Explanation>
+            </Validator>
+        </Task>
+	</Chapter>
+</Lecture>
+`
+	lecture, err := New(strings.NewReader(xml))
 	assert.NoError(t, err)
 
 	task1 := lecture.Chapter[0].Task[0]
@@ -38,11 +70,43 @@ func TestNew(t *testing.T) {
 
 	result = task1.Validate(input, false)
 	assert.Equal(t, 0, len(result))
+}
 
-	task2 := lecture.Chapter[0].Task[3]
-	input = make(DataMap)
+func TestSimple2(t *testing.T) {
+	xml := `<Lecture id="EL1">
+    <Title>Elektronik 1</Title>
+    <Author>Prof. Dr. Helmut Neemann</Author>
+    <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
+    <Description>In diesem Quiz werden Fragen zur Elektronik 1 gestellt.</Description>
+    <Chapter>
+        <Title>Die Diode</Title>
+        <Description>Hier geht es um die Eigenschaften der Diode.</Description>
+        <Task>
+            <Name>Näherung im Durchlassbereich</Name>
+            <Question>
+Die Diodengleichung lautet $I_D=I_S (e^{\frac{U_D}{U_T}}-1)$.
+
+Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5\u{V}$) aussehen?</Question>
+            <Input id="func1" type="text">
+                <Label>$I_D=$</Label>
+                <Validator>
+                    <Expression>cmpFunc("is*exp(ud/ut)",a.func1.toLower(),["is","ud","ut"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
+                    <Help>Überlegen Sie sich, welchen Summanden man vernachlässigen kann.</Help>
+                    <Explanation>Die Näherung lautet $I_D=I_S e^{\frac{U_D}{U_T}}$.</Explanation>
+                </Validator>
+            </Input>
+        </Task>
+	</Chapter>
+</Lecture>
+`
+	lecture, err := New(strings.NewReader(xml))
+	assert.NoError(t, err)
+
+	task2 := lecture.Chapter[0].Task[0]
+
+	input := make(DataMap)
 	input["func1"] = "IS*exp(UD/UT)"
-	result = task2.Validate(input, false)
+	result := task2.Validate(input, false)
 	assert.Equal(t, 0, len(result))
 
 	input = make(DataMap)

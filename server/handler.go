@@ -132,7 +132,21 @@ var mainTemp = Templates.Lookup("main.html")
 
 func CreateMain(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		err := mainTemp.Execute(w, lectures)
+
+		isAdmin := false
+		if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
+			isAdmin = ses.IsAdmin()
+		}
+
+		data := struct {
+			Lectures *data.Lectures
+			Admin    bool
+		}{
+			Lectures: lectures,
+			Admin:    isAdmin,
+		}
+
+		err := mainTemp.Execute(w, data)
 		if err != nil {
 			log.Println(err)
 		}
@@ -172,7 +186,7 @@ func CreateLecture(lectures *data.Lectures) http.Handler {
 			return
 		}
 
-		ses, _ := r.Context().Value("session").(*session.Session)
+		ses, _ := r.Context().Value(session.Key).(*session.Session)
 
 		err = lectureTemp.Execute(w, lectureData{Lecture: lecture, session: ses})
 		if err != nil {
@@ -227,7 +241,7 @@ func CreateChapter(lectures *data.Lectures) http.Handler {
 			return
 		}
 
-		ses, _ := r.Context().Value("session").(*session.Session)
+		ses, _ := r.Context().Value(session.Key).(*session.Session)
 
 		err = chapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses})
 		if err != nil {
@@ -289,7 +303,12 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 			return
 		}
 
-		td := taskData{Task: task, Answers: data.DataMap{}, ShowResultButton: true}
+		showResult := false
+		if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
+			showResult = ses.IsAdmin()
+		}
+
+		td := taskData{Task: task, Answers: data.DataMap{}, ShowResultButton: showResult}
 
 		if r.Method == http.MethodPost {
 			err = r.ParseForm()
@@ -310,7 +329,7 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 			td.Result = task.Validate(td.Answers, showResult)
 			if len(td.Result) == 0 {
 
-				if ses, ok := r.Context().Value("session").(*session.Session); ok {
+				if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
 					ses.TaskCompleted(task.GetId())
 				}
 
@@ -351,4 +370,50 @@ func CreateImages(lectures *data.Lectures) http.Handler {
 		}
 		w.Write(data)
 	})
+}
+
+var adminTemp = Templates.Lookup("admin.html")
+
+func CreateAdmin(lectures *data.Lectures) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			err := r.ParseMultipartForm(32 << 20)
+			if err != nil {
+				respondWithError(w, err)
+				return
+			}
+
+			file, _, err := r.FormFile("file")
+			if err != nil {
+				respondWithError(w, err)
+				return
+			}
+			zip, err := io.ReadAll(file)
+			file.Close()
+			if err != nil {
+				respondWithError(w, err)
+				return
+			}
+
+			err = lectures.Uploaded(zip)
+			if err != nil {
+				respondWithError(w, err)
+				return
+			}
+		}
+		err := adminTemp.Execute(w, lectures)
+		if err != nil {
+			log.Println(err)
+		}
+	})
+}
+
+var errorViewTemp = Templates.Lookup("error.html")
+
+func respondWithError(writer http.ResponseWriter, e error) {
+	log.Println(e)
+	err := errorViewTemp.Execute(writer, e)
+	if err != nil {
+		log.Println(err)
+	}
 }

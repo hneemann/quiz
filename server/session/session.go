@@ -19,6 +19,7 @@ import (
 type Session struct {
 	mutex        sync.Mutex
 	time         time.Time
+	admin        bool
 	completed    map[string]map[data.InnerId]bool
 	persistToken string
 	dataModified bool
@@ -28,6 +29,12 @@ func (s *Session) touch() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	s.time = time.Now()
+}
+
+func (s *Session) IsAdmin() bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.admin
 }
 
 // TaskCompleted marks a task as completed.
@@ -222,9 +229,9 @@ func (s *Sessions) get(r *http.Request) (*Session, bool) {
 	return nil, false
 }
 
-func (s *Sessions) Create(persistToken string, w http.ResponseWriter) *Session {
+func (s *Sessions) Create(persistToken string, admin bool, w http.ResponseWriter) *Session {
 	token := createRandomString()
-	session := &Session{persistToken: persistToken}
+	session := &Session{persistToken: persistToken, admin: admin}
 	session.restore(path.Join(s.dataFolder, session.persistToken))
 	session.cleanup(s.lectures)
 	session.touch()
@@ -261,16 +268,30 @@ func createRandomString() string {
 	return string(b)
 }
 
+const Key = "session"
+
 func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ses, ok := s.get(r)
 		if ok {
-			c := context.WithValue(r.Context(), "session", ses)
+			c := context.WithValue(r.Context(), Key, ses)
 			parent.ServeHTTP(w, r.WithContext(c))
 		} else {
 			log.Println("redirect to login:", r.URL.Path)
 			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
 			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
+		}
+	})
+}
+
+func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ses, ok := s.get(r)
+		if ok && ses.IsAdmin() {
+			c := context.WithValue(r.Context(), Key, ses)
+			parent.ServeHTTP(w, r.WithContext(c))
+		} else {
+			http.Redirect(w, r, "/", http.StatusForbidden)
 		}
 	})
 }
@@ -281,12 +302,12 @@ type LoginData struct {
 }
 
 type Authenticator interface {
-	Authenticate(user, pass string) (string, error)
+	Authenticate(user, pass string) (string, bool, error)
 }
 
-type AuthFunc func(user, pass string) (string, error)
+type AuthFunc func(user, pass string) (string, bool, error)
 
-func (a AuthFunc) Authenticate(user, pass string) (string, error) {
+func (a AuthFunc) Authenticate(user, pass string) (string, bool, error) {
 	return a(user, pass)
 }
 
@@ -300,8 +321,9 @@ func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authent
 			encodedTarget = r.FormValue("target")
 
 			var id string
-			if id, err = auth.Authenticate(user, pass); err == nil {
-				sessions.Create(id, w)
+			var admin bool
+			if id, admin, err = auth.Authenticate(user, pass); err == nil {
+				sessions.Create(id, admin, w)
 
 				url := "/"
 				t, err := base64.URLEncoding.DecodeString(encodedTarget)

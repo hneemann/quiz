@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Administrationsseite</title>
+  <link rel="icon" type="image/svg" href="/assets/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body>
+  <div class="main">
+  <h2>Administrationsseite</h2>
+
+  <div class="lecture">
+  <h3>Lektions-Zip Datei hochladen</h3>
+<form action="." method="post" enctype="multipart/form-data">
+    <p>
+        <label for="file">ZIP-Datei der Lektion</label><br/>
+        <input name="file" type="file" size="50" accept="*.zip" />
+    </p>
+    <button type="submit">... upload</button>
+</form>
+  </div>
+
+  <div class="lecture">
+    <h3>Statistik</h3>
+    {{range .List}}
+      <p style="margin-top:1.5em;">
+        <a class="nav" href="/statistics/?id={{.Id}}">{{.Title}}</a>
+      </p>
+    {{end}}
+  </div>
+
+  <p><a class="nav" href="/">Zurück</a></p>
+
+  </div>
+</body>
+</html>

@@ -102,7 +102,7 @@ func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byt
 		}
 		log.Println("oidc id:", ident, m)
 
-		sessions.Create(ident, w)
+		sessions.Create(ident, false, w)
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 

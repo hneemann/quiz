@@ -13,7 +13,7 @@ func ReadLectures(folder string) (*Lectures, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading lecture directory: %w", err)
 	}
-	var lectures Lectures
+	lectures := Lectures{folder: folder}
 	for _, f := range l {
 		var lecture *Lecture
 		if f.IsDir() {
@@ -22,7 +22,7 @@ func ReadLectures(folder string) (*Lectures, error) {
 				return nil, err
 			}
 		} else if filepath.Ext(f.Name()) == ".zip" {
-			lecture, err = ReadZip(filepath.Join(folder, f.Name()))
+			lecture, err = readZipFile(filepath.Join(folder, f.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -77,21 +77,33 @@ func readFolder(folder string) (*Lecture, error) {
 	lecture.files = fileData
 	return lecture, nil
 }
-
-func ReadZip(zipFile string) (*Lecture, error) {
-
-	z, err := zip.OpenReader(zipFile)
+func readZipFile(zipFile string) (*Lecture, error) {
+	r, err := os.Open(zipFile)
 	if err != nil {
-		return nil, fmt.Errorf("error reading folder %s: %w", zipFile, err)
+		return nil, fmt.Errorf("error reading zip file %s: %w", zipFile, err)
 	}
-	defer z.Close()
+
+	fi, err := r.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("error reading zip file %s: %w", zipFile, err)
+	}
+
+	defer r.Close()
+	return ReadZip(r, fi.Size())
+}
+
+func ReadZip(r io.ReaderAt, size int64) (*Lecture, error) {
+	z, err := zip.NewReader(r, size)
+	if err != nil {
+		return nil, fmt.Errorf("error reading zip file: %w", err)
+	}
 
 	fileData := map[string][]byte{}
 	var lecture *Lecture
 	for _, f := range z.File {
 		if filepath.Ext(f.Name) == ".xml" {
 			if lecture != nil {
-				return nil, fmt.Errorf("multiple xml files in zip file %s", zipFile)
+				return nil, fmt.Errorf("multiple xml files in zip file ")
 			}
 			file, err := f.Open()
 			if err != nil {
@@ -114,7 +126,7 @@ func ReadZip(zipFile string) (*Lecture, error) {
 		}
 	}
 	if lecture == nil {
-		return nil, fmt.Errorf("no xml file found in zip file %s", zipFile)
+		return nil, fmt.Errorf("no xml file found in zip file")
 	}
 	lecture.files = fileData
 	return lecture, nil
