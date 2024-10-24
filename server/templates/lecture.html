@@ -2,19 +2,19 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>{{.Lecture.Name}}</title>
+  <title>{{.Lecture.Title}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
 <body>
   <div class="main">
-  <h2>{{.Lecture.Name}}</h2>
+  <h2>{{.Lecture.Title}}</h2>
   {{markdown .Lecture.Description .Lecture.LID}}
   <p>Author: {{.Lecture.Author}} ({{.Lecture.AuthorEMail}})</p>
   {{range .Lecture.Chapter}}
     <div class="chapter">
       <a href="/chapter/{{.LID}}/{{.CID}}">
-      <h2>{{.Name}}</h2>
+      <h2>{{.Title}}</h2>
       {{markdown .Description .LID}}
       {{$c := $.Completed $.Lecture.Hash .CID}}
       {{$a := $.Avail .CID}}

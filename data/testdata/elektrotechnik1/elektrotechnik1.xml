@@ -1,10 +1,10 @@
 <Lecture id="ET1">
-    <Name>Elektrotechnik 1</Name>
+    <Title>Elektrotechnik 1</Title>
     <Author>Prof. Dr. Helmut Neemann</Author>
     <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Description>In diesem Quiz werden Fragen zur Elektrotechnik 1 gestellt.</Description>
     <Chapter>
-        <Name>Gleichstromkreise</Name>
+        <Title>Gleichstromkreise</Title>
         <Description>Aufgaben zu Netzwerken mit nur einer Strom- oder Spannungsquelle.</Description>
         <Task>
             <Question>

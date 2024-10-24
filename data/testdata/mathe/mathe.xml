@@ -1,10 +1,10 @@
 <Lecture id="MATHE">
-    <Name>Mathematik</Name>
+    <Title>Mathematik</Title>
     <Description>In diesem Quiz werden Fragen zur Mathematik gestellt.</Description>
     <Author>Prof. Dr. Helmut Neemann</Author>
     <AuthorEMail>helmut.neemann@dhbw.de</AuthorEMail>
     <Chapter>
-        <Name>Algebra</Name>
+        <Title>Algebra</Title>
         <Description>Einige einfache Aufgaben aus der Algebra.</Description>
         <Task>
             <Name>Ausdrücke zusammenfassen</Name>
@@ -96,7 +96,7 @@
         </Task>
     </Chapter>
     <Chapter>
-        <Name>Differentiation</Name>
+        <Title>Differentiation</Title>
         <Description>Die Ableitung verschiedener Funktionen ist zu berechnen.</Description>
         <Task>
             <Name>Polynom</Name>
@@ -174,7 +174,7 @@
         </Task>
     </Chapter>
     <Chapter>
-        <Name>Integration</Name>
+        <Title>Integration</Title>
         <Description>Das Integral verschiedener Funktionen ist zu berechnen.</Description>
         <Task>
             <Name>Unbestimmtes Integral</Name>

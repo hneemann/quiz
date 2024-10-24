@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>{{.Chapter.Name}}</title>
+  <title>{{.Chapter.Title}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
@@ -10,7 +10,7 @@
 
   <div class="main">
 
-  <h2>{{.Chapter.Name}}</h2>
+  <h2>{{.Chapter.Title}}</h2>
   {{markdown .Chapter.Description .Chapter.LID}}
 
   <h3>Aufgaben</h3>

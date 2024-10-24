@@ -323,7 +323,7 @@ func (t *Task) TID() int {
 type Chapter struct {
 	lid         string
 	cid         int
-	Name        string
+	Title       string
 	Description string
 	Task        []*Task
 }
@@ -345,11 +345,11 @@ func (c *Chapter) GetTask(number int) (*Task, error) {
 
 type Lecture struct {
 	Id          string `xml:"id,attr"`
+	Title       string
 	Author      string
 	AuthorEMail string
-	Name        string
-	hash        string
 	Description string
+	hash        string
 	Chapter     []*Chapter
 	files       map[string][]byte
 }
@@ -373,14 +373,20 @@ func (l *Lecture) GetFile(name string) ([]byte, error) {
 }
 
 func (l *Lecture) Init() error {
+	if l.Title == "" {
+		return errors.New("lecture has no title")
+	}
 	if l.Author == "" {
-		return fmt.Errorf("author is missing in lecture %s", l.Name)
+		return fmt.Errorf("author is missing in lecture %s", l.Title)
 	}
 	if l.AuthorEMail == "" {
-		return fmt.Errorf("author email is missing in lecture %s", l.Name)
+		return fmt.Errorf("author email is missing in lecture %s", l.Title)
 	}
 
 	for cid, chapter := range l.Chapter {
+		if chapter.Title == "" {
+			return fmt.Errorf("no title in chapter %d", cid)
+		}
 		chapter.cid = cid
 		for tid, task := range chapter.Task {
 			task.cid = cid
@@ -396,16 +402,20 @@ func (l *Lecture) Init() error {
 			vars := make(map[string]InputType)
 			for _, i := range task.Input {
 				if i.Id == "" {
-					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Name, task.Name)
+					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Title, task.Name)
+				}
+
+				if !isIdent(i.Id) {
+					return fmt.Errorf("invalid id '%s' at input in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
 				}
 
 				if _, ok := vars[i.Id]; ok {
-					return fmt.Errorf("duplicate input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
+					return fmt.Errorf("duplicate input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
 				}
 				vars[i.Id] = i.Type
 
 				if i.Label == "" {
-					return fmt.Errorf("no label at input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
+					return fmt.Errorf("no label at input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
 				}
 			}
 
@@ -414,31 +424,48 @@ func (l *Lecture) Init() error {
 				if i.Validator != nil {
 					err := i.Validator.init(vars, []string{i.Id})
 					if err != nil {
-						return fmt.Errorf("invalid expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Name, task.Name, err)
+						return fmt.Errorf("invalid expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Title, task.Name, err)
 					}
 				} else {
 					needsToBeUsedInTaskValidator = append(needsToBeUsedInTaskValidator, i.Id)
 				}
 
 				if task.Validator == nil && i.Validator == nil {
-					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Name, task.Name)
+					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
 				}
 			}
 
 			if task.Validator != nil {
 				err := task.Validator.init(vars, needsToBeUsedInTaskValidator)
 				if err != nil {
-					return fmt.Errorf("invalid expression in chapter '%s' task '%s': %w", chapter.Name, task.Name, err)
+					return fmt.Errorf("invalid expression in chapter '%s' task '%s': %w", chapter.Title, task.Name, err)
 				}
 			} else {
 				if len(needsToBeUsedInTaskValidator) > 0 {
-					return fmt.Errorf("validator is missing in chapter '%s' task '%s'", chapter.Name, task.Name)
+					return fmt.Errorf("validator is missing in chapter '%s' task '%s'", chapter.Title, task.Name)
 				}
 			}
 
 		}
 	}
 	return nil
+}
+
+func isIdent(id string) bool {
+	for i, c := range id {
+		if i == 0 {
+			if c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+				continue
+			}
+			return false
+		} else {
+			if c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') {
+				continue
+			}
+			return false
+		}
+	}
+	return true
 }
 
 func (l *Lecture) GetChapter(number int) (*Chapter, error) {
@@ -465,7 +492,7 @@ func (l *Lectures) init() {
 		}
 	}
 	sort.Slice(lectureList, func(i, j int) bool {
-		return lectureList[i].Name < lectureList[j].Name
+		return lectureList[i].Title < lectureList[j].Title
 	})
 	l.list = lectureList
 }
