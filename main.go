@@ -44,6 +44,8 @@ func main() {
 	loginTemp := server.Templates.Lookup("login.html")
 	mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
 
+	//myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte("test1234test1234"), sessions)
+
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}
 
 	c := make(chan os.Signal, 1)

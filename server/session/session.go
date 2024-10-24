@@ -222,7 +222,7 @@ func (s *Sessions) get(r *http.Request) (*Session, bool) {
 	return nil, false
 }
 
-func (s *Sessions) create(persistToken string, w http.ResponseWriter) *Session {
+func (s *Sessions) Create(persistToken string, w http.ResponseWriter) *Session {
 	token := createRandomString()
 	session := &Session{persistToken: persistToken}
 	session.restore(path.Join(s.dataFolder, session.persistToken))
@@ -264,9 +264,6 @@ func createRandomString() string {
 func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ses, ok := s.get(r)
-		if !ok {
-			ses = s.create("helmut", w)
-		}
 		if ok {
 			c := context.WithValue(r.Context(), "session", ses)
 			parent.ServeHTTP(w, r.WithContext(c))
@@ -304,7 +301,7 @@ func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authent
 
 			var id string
 			if id, err = auth.Authenticate(user, pass); err == nil {
-				sessions.create(id, w)
+				sessions.Create(id, w)
 
 				url := "/"
 				t, err := base64.URLEncoding.DecodeString(encodedTarget)

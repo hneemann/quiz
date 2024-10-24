@@ -3,8 +3,10 @@ package myOidc
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hneemann/quiz/server/session"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	httphelper "github.com/zitadel/oidc/v3/pkg/http"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -15,7 +17,7 @@ import (
 	"time"
 )
 
-func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byte) {
+func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byte, sessions *session.Sessions) {
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
 	keyPath := os.Getenv("KEY_PATH")
@@ -44,9 +46,6 @@ func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byt
 	if keyPath != "" {
 		options = append(options, rp.WithJWTProfile(rp.SignerFromKeyPath(keyPath)))
 	}
-
-	// One can add a logger to the context,
-	// pre-defining log attributes as required.
 
 	provider, err := rp.NewRelyingPartyOIDC(context.Background(), issuer, clientID, clientSecret, redirectURI, scopes, options...)
 	if err != nil {
@@ -78,20 +77,34 @@ func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byt
 		urlOptions...,
 	))
 
-	marshalToken := func(w http.ResponseWriter, r *http.Request, tokens *oidc.Tokens[*oidc.IDTokenClaims], state string, rp rp.RelyingParty) {
-
-		fmt.Println("tokens: ", tokens.IDToken)
-		b, err := base64.StdEncoding.DecodeString(tokens.IDToken)
+	unmarshalToken := func(w http.ResponseWriter, r *http.Request, tokens *oidc.Tokens[*oidc.IDTokenClaims], state string, rp rp.RelyingParty) {
+		tok := strings.Split(tokens.IDToken, ".")
+		if len(tok) < 1 {
+			http.Error(w, "no IDToken received", 504)
+			return
+		}
+		b, err := base64.StdEncoding.DecodeString(tok[0])
 		if err != nil {
-			log.Println("error: ", err)
-		} else {
-			log.Println("id token: ", string(b))
+			http.Error(w, "error decoding IDToken", 504)
+			return
+		}
+		m := map[string]string{}
+		err = json.Unmarshal(b, &m)
+		if err != nil {
+			http.Error(w, "error unmarshalling IDToken", 504)
+			return
 		}
 
+		ident, ok := m["kid"]
+		if !ok {
+			http.Error(w, "no id found in IDToken", 504)
+			return
+		}
+		log.Println("oidc id:", ident, m)
+
+		sessions.Create(ident, w)
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 
-	mux.Handle(callbackPath, rp.CodeExchangeHandler(marshalToken, provider))
-	//	mux.Handle(callbackPath, rp.CodeExchangeHandler(rp.UserinfoCallback(marshalToken), provider))
-
+	mux.Handle(callbackPath, rp.CodeExchangeHandler(unmarshalToken, provider))
 }
