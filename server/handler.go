@@ -417,3 +417,57 @@ func respondWithError(writer http.ResponseWriter, e error) {
 		log.Println(err)
 	}
 }
+
+var statsViewTemp = Templates.Lookup("statistics.html")
+
+type StatsData struct {
+	Title   string
+	Chapter []StatsChapter
+}
+type StatsChapter struct {
+	Title string
+	Task  []StatsTask
+}
+type StatsTask struct {
+	Task  string
+	Count int
+}
+
+func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.URL.Query().Get("id")
+		lecture, err := lectures.GetLecture(id)
+		if err != nil {
+			http.Redirect(w, r, "/admin", http.StatusFound)
+			return
+		}
+
+		statsMap, err := sessions.Stats(lecture.Hash())
+		if err != nil {
+			http.Error(w, "error collecting data", http.StatusInternalServerError)
+			return
+		}
+
+		stats := StatsData{Title: lecture.Title}
+		for _, c := range lecture.Chapter {
+			chapter := StatsChapter{Title: c.Title}
+			for _, t := range c.Task {
+				counter := 0
+				for _, s := range statsMap {
+					if comp, ok := s[t.GetId().InnerId]; ok {
+						if comp {
+							counter++
+						}
+					}
+				}
+				chapter.Task = append(chapter.Task, StatsTask{Task: t.Name, Count: counter})
+			}
+			stats.Chapter = append(stats.Chapter, chapter)
+		}
+
+		err = statsViewTemp.Execute(w, stats)
+		if err != nil {
+			log.Println(err)
+		}
+	})
+}

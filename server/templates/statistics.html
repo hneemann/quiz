@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>{{.Title}}</title>
+  <link rel="icon" type="image/svg" href="/assets/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body>
+  <div class="main">
+    <h2>{{.Title}}</h2>
+    <table>
+    {{range .Chapter}}
+         <tr>
+           <th colspan="2" style="padding-top:1em;padding-bottom:1em">{{.Title}}</th>
+         </tr>
+         {{range .Task}}
+           <tr>
+             <td>{{.Task}}</td>
+             <td>{{.Count}}</td>
+           </tr>
+         {{end}}
+      {{end}}
+    </table>
+    <p><a class="nav" href="/admin">Zurück</a></p>
+  </div>
+</body>
+</html>

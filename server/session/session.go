@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -212,6 +213,35 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 	return s
 }
 
+func (s *Sessions) Stats(hash string) ([]map[data.InnerId]bool, error) {
+	list, err := os.ReadDir(s.dataFolder)
+	if err != nil {
+		return nil, err
+	}
+	var found []map[data.InnerId]bool
+	for _, f := range list {
+		if !f.IsDir() {
+			filePath := filepath.Join(s.dataFolder, f.Name())
+			if fi, err := f.Info(); err == nil {
+				if time.Since(fi.ModTime()) > time.Hour*24*180 {
+					err = os.Remove(filePath)
+					if err != nil {
+						log.Println("error removing old session file", err)
+					}
+					continue
+				}
+			}
+
+			se := &Session{}
+			se.restore(filePath)
+			if c, ok := se.completed[hash]; ok {
+				found = append(found, c)
+			}
+		}
+	}
+	return found, nil
+}
+
 const cookieName = "sessionId"
 
 func (s *Sessions) get(r *http.Request) (*Session, bool) {
@@ -291,7 +321,9 @@ func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 			c := context.WithValue(r.Context(), Key, ses)
 			parent.ServeHTTP(w, r.WithContext(c))
 		} else {
-			http.Redirect(w, r, "/", http.StatusForbidden)
+			log.Println("redirect to login:", r.URL.Path)
+			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
+			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
 		}
 	})
 }

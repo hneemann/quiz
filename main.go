@@ -40,6 +40,7 @@ func main() {
 	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures)))
 	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures)))
 	mux.Handle("/admin/", sessions.WrapAdmin(server.CreateAdmin(lectures)))
+	mux.Handle("/statistics/", sessions.WrapAdmin(server.CreateStatistics(lectures, sessions)))
 	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))
 
 	loginTemp := server.Templates.Lookup("login.html")
