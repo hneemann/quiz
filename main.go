@@ -14,7 +14,7 @@ import (
 )
 
 func Authenticate(user, pass string) (string, bool, error) {
-	return "helmut", true, nil
+	return "default", true, nil
 }
 
 func main() {

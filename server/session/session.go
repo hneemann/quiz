@@ -214,6 +214,8 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 }
 
 func (s *Sessions) Stats(hash string) ([]map[data.InnerId]bool, error) {
+	s.PersistAll()
+
 	list, err := os.ReadDir(s.dataFolder)
 	if err != nil {
 		return nil, err
