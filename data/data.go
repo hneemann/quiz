@@ -355,6 +355,7 @@ type Lecture struct {
 	Description string
 	hash        string
 	Chapter     []*Chapter
+	folder      string
 	files       map[string][]byte
 }
 
@@ -479,6 +480,10 @@ func (l *Lecture) GetChapter(number int) (*Chapter, error) {
 	return l.Chapter[number], nil
 }
 
+func (l *Lecture) CanReload() bool {
+	return l.folder != ""
+}
+
 type Lectures struct {
 	rwMutex  sync.RWMutex
 	lectures map[string]*Lecture
@@ -557,6 +562,28 @@ func (l *Lectures) Uploaded(file []byte) error {
 	l.insert(lecture)
 
 	return nil
+}
+
+func (l *Lectures) Reload(id string) (*Lecture, error) {
+	if l.lectures == nil {
+		return nil, fmt.Errorf("no lectures available")
+	}
+
+	l.rwMutex.Lock()
+	defer l.rwMutex.Unlock()
+
+	if lecture, ok := l.lectures[id]; !ok {
+		return nil, fmt.Errorf("lecture %s not found", id)
+	} else {
+		newLecture, err := readFolder(lecture.folder)
+		if err != nil {
+			return nil, err
+		}
+
+		l.lectures[id] = newLecture
+		l.init()
+		return newLecture, nil
+	}
 }
 
 type hashReader struct {

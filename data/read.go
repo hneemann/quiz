@@ -75,6 +75,7 @@ func readFolder(folder string) (*Lecture, error) {
 		return nil, fmt.Errorf("no xml file found in folder %s", folder)
 	}
 	lecture.files = fileData
+	lecture.folder = folder
 	return lecture, nil
 }
 func readZipFile(zipFile string) (*Lecture, error) {

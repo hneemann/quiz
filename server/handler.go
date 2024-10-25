@@ -260,6 +260,8 @@ type taskData struct {
 	Result           map[string]string
 	Next             string
 	Ok               bool
+	ShowReload       bool
+	ReloadError      error
 }
 
 func (td taskData) GetAnswer(id string) string {
@@ -291,6 +293,16 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 			return
 		}
 
+		var reloadError error
+		reload := r.URL.Query().Get("rl") == "true"
+		if reload {
+			var nl *data.Lecture
+			nl, reloadError = lectures.Reload(lecture.Id)
+			if nl != nil {
+				lecture = nl
+			}
+		}
+
 		chapter, err := lecture.GetChapter(c)
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
@@ -304,11 +316,13 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 		}
 
 		showResult := false
+		showReload := false
 		if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
 			showResult = ses.IsAdmin()
+			showReload = ses.IsAdmin() && lecture.CanReload()
 		}
 
-		td := taskData{Task: task, Answers: data.DataMap{}, ShowResultButton: showResult}
+		td := taskData{Task: task, Answers: data.DataMap{}, ShowResultButton: showResult, ShowReload: showReload, ReloadError: reloadError}
 
 		if r.Method == http.MethodPost {
 			err = r.ParseForm()

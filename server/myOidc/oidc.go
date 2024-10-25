@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/hneemann/quiz/server/session"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
@@ -17,17 +16,18 @@ import (
 	"time"
 )
 
-func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byte, sessions *session.Sessions) {
+func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, cookieKey []byte, sessions *session.Sessions) {
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
 	keyPath := os.Getenv("KEY_PATH")
 	issuer := os.Getenv("ISSUER")
-	port := os.Getenv("PORT")
+	tokenIdAttr := os.Getenv("ID_TOKEN_ID_ATTR")
+	callbackHost := os.Getenv("HOST")
 	scopes := strings.Split(os.Getenv("SCOPES"), " ")
 	responseMode := os.Getenv("RESPONSE_MODE")
 
-	redirectURI := fmt.Sprintf("http://localhost:%v%v", port, callbackPath)
-	cookieHandler := httphelper.NewCookieHandler(key, key, httphelper.WithUnsecure())
+	redirectURI := callbackHost + callbackPath
+	cookieHandler := httphelper.NewCookieHandler(cookieKey, cookieKey, httphelper.WithUnsecure())
 
 	client := &http.Client{
 		Timeout: time.Minute,
@@ -95,7 +95,7 @@ func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, key []byt
 			return
 		}
 
-		ident, ok := m["kid"]
+		ident, ok := m[tokenIdAttr]
 		if !ok {
 			http.Error(w, "no id found in IDToken", 504)
 			return
