@@ -10,7 +10,7 @@
   <div class="main">
   <h2>{{.Lecture.Title}}</h2>
   {{markdown .Lecture.Description .Lecture.LID}}
-  <p>Author: {{.Lecture.Author}} ({{.Lecture.AuthorEMail}})</p>
+  <p style="font-size:80%">Autor: {{.Lecture.Author}} ({{.Lecture.AuthorEMail}})</p>
   {{range .Lecture.Chapter}}
     <div class="chapter">
       <a href="/chapter/{{.LID}}/{{.CID}}">
