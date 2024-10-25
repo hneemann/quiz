@@ -124,7 +124,7 @@ func (s *Session) persist(path string) {
 	}
 
 	s.dataModified = false
-	log.Println("persisted session data", s.persistToken)
+	log.Println("persisted session", s.persistToken)
 }
 
 func (s *Session) restore(path string) {
@@ -262,20 +262,34 @@ func (s *Sessions) get(r *http.Request) (*Session, bool) {
 }
 
 func (s *Sessions) Create(persistToken string, admin bool, w http.ResponseWriter) *Session {
-	token := createRandomString()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	for sessionToken, session := range s.sessions {
+		if session.persistToken == persistToken {
+			log.Println("restoring session", persistToken)
+			session.touch()
+			http.SetCookie(w, &http.Cookie{
+				Name:  cookieName,
+				Value: sessionToken,
+				Path:  "/",
+			})
+			return session
+		}
+	}
+
+	sessionToken := createRandomString()
 	session := &Session{persistToken: persistToken, admin: admin}
 	session.restore(path.Join(s.dataFolder, session.persistToken))
 	session.cleanup(s.lectures)
 	session.touch()
 	http.SetCookie(w, &http.Cookie{
 		Name:  cookieName,
-		Value: token,
+		Value: sessionToken,
 		Path:  "/",
 	})
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	s.sessions[token] = session
+	s.sessions[sessionToken] = session
 
 	return session
 }
@@ -284,10 +298,10 @@ func (s *Sessions) PersistAll() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	log.Println("persisting all sessions")
 	for _, session := range s.sessions {
 		session.persist(path.Join(s.dataFolder, session.persistToken))
 	}
+	log.Println("persisted all sessions")
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
