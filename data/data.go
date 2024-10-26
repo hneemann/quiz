@@ -161,7 +161,7 @@ type collectVars struct {
 func (c *collectVars) Visit(ast parser2.AST) bool {
 	if a, ok := ast.(*parser2.MapAccess); ok {
 		if i, ok := a.MapValue.(*parser2.Ident); ok {
-			if i.Name == "a" {
+			if i.Name == "answer" {
 				c.used[a.Key] = true
 			}
 		}
@@ -177,7 +177,7 @@ func (v *Validator) init(varsAvail map[string]InputType, mustBeUsed []string) er
 		return fmt.Errorf("no expression given")
 	}
 
-	f, err := myParser.Generate(v.Expression, "a")
+	f, err := myParser.Generate(v.Expression, "answer")
 	if err != nil {
 		return err
 	}

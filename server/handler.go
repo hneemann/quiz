@@ -287,13 +287,14 @@ type taskData struct {
 	Task                *data.Task
 	Answers             data.DataMap
 	Result              map[string]string
+	inputHasValidator   map[string]bool
 	Next                string
 	Ok                  bool
 	ShowReload          bool
 	ReloadError         error
 }
 
-func (td taskData) GetAnswer(id string) string {
+func (td *taskData) GetAnswer(id string) string {
 	switch a := td.Answers[id].(type) {
 	case bool:
 		if a {
@@ -307,11 +308,22 @@ func (td taskData) GetAnswer(id string) string {
 	return ""
 }
 
-func (td taskData) GetResult(id string) string {
+func (td *taskData) GetResult(id string) string {
 	return td.Result[id]
 }
 
-func (td taskData) IsHook(id string) bool {
+func (td *taskData) IsHook(id string) bool {
+	if td.inputHasValidator == nil {
+		td.inputHasValidator = map[string]bool{}
+		for _, i := range td.Task.Input {
+			td.inputHasValidator[i.Id] = i.Validator != nil
+		}
+	}
+
+	if !td.inputHasValidator[id] {
+		return false
+	}
+
 	_, isMessage := td.Result[id]
 	return td.HasResult && !isMessage
 }
@@ -396,7 +408,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			td.Next = fmt.Sprintf("/task/%s/%d/%d/", task.LID(), task.CID(), task.TID()+1)
 		}
 
-		err = taskTemp.Execute(w, td)
+		err = taskTemp.Execute(w, &td)
 		if err != nil {
 			log.Println(err)
 		}
