@@ -221,6 +221,7 @@ var chapterTemp = Templates.Lookup("chapter.html")
 type chapterData struct {
 	Chapter *data.Chapter
 	session *session.Session
+	state   data.LectureState
 }
 
 func (cd chapterData) Completed(id data.TaskId) bool {
@@ -230,7 +231,30 @@ func (cd chapterData) Completed(id data.TaskId) bool {
 	return cd.session.IsTaskCompleted(id)
 }
 
-func CreateChapter(lectures *data.Lectures) http.Handler {
+func (cd chapterData) IsAvail(id data.TaskId) bool {
+	return IsTaskAvail(id, cd.Chapter, &cd.state, cd.session)
+}
+
+func IsTaskAvail(id data.TaskId, c *data.Chapter, state *data.LectureState, session *session.Session) bool {
+	if state.ShowAllTasks || id.InnerId.TId == 0 || !c.StepByStep {
+		return true
+	}
+
+	if session == nil {
+		return false
+	}
+
+	if session.IsAdmin() {
+		return true
+	}
+
+	return session.IsTaskCompleted(data.TaskId{
+		LHash:   id.LHash,
+		InnerId: data.InnerId{id.InnerId.CId, id.InnerId.TId - 1},
+	})
+}
+
+func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, next := getIntFromPath(r.URL.Path)
 		l, _ := getLectureFromPath(next)
@@ -248,7 +272,7 @@ func CreateChapter(lectures *data.Lectures) http.Handler {
 
 		ses, _ := r.Context().Value(session.Key).(*session.Session)
 
-		err = chapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses})
+		err = chapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses, state: states.Get(lecture.Id)})
 		if err != nil {
 			log.Println(err)
 		}
@@ -320,11 +344,18 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			return
 		}
 
-		showSolutions := states.Get(lecture.Id).ShowSolutions
+		state := states.Get(lecture.Id)
+		showSolutions := state.ShowSolutions
 		showReload := false
-		if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
+		ses, _ := r.Context().Value(session.Key).(*session.Session)
+		if ses != nil {
 			showSolutions = showSolutions || ses.IsAdmin()
 			showReload = ses.IsAdmin() && lecture.CanReload()
+
+			if !IsTaskAvail(task.GetId(), chapter, &state, ses) {
+				http.Error(w, "task not available", http.StatusForbidden)
+				return
+			}
 		}
 
 		td := taskData{Task: task, Answers: data.DataMap{}, ShowSolutionsButton: showSolutions, ShowReload: showReload, ReloadError: reloadError}
@@ -348,7 +379,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			td.Result = task.Validate(td.Answers, showResult)
 			if len(td.Result) == 0 {
 
-				if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
+				if ses != nil {
 					ses.TaskCompleted(task.GetId())
 				}
 
@@ -356,7 +387,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			}
 			td.HasResult = true
 		}
-		if task.TID() < len(chapter.Task)-1 {
+		if task.TID() < len(chapter.Task)-1 && (ses != nil && ses.IsTaskCompleted(task.GetId())) {
 			td.Next = fmt.Sprintf("/task/%s/%d/%d/", task.LID(), task.CID(), task.TID()+1)
 		}
 
@@ -517,6 +548,7 @@ func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Ha
 			}
 
 			settings.ShowSolutions = r.Form.Get("showSolutions") == "true"
+			settings.ShowAllTasks = r.Form.Get("showAllTasks") == "true"
 
 			err = states.SetState(id, settings)
 			if err != nil {

@@ -15,14 +15,15 @@
 
   <h3>Aufgaben</h3>
   {{range .Chapter.Task}}
-     <a href="/task/{{.LID}}/{{.CID}}/{{.TID}}/">
-         <div class="task">
+     {{$avail:=$.IsAvail .GetId}}
+     {{if $avail}}<a href="/task/{{.LID}}/{{.CID}}/{{.TID}}/">{{end}}
+         <div class="task" {{if not $avail}}style="color:gray"{{end}}>
              {{.Name}}
              {{if $.Completed .GetId}}
                  <img class="icon" src="/assets/completed.svg" />
              {{end}}
          </div>
-     </a>
+     {{if $avail}}</a>{{end}}
   {{end}}
 
  <a class="nav" href="/lecture/{{.Chapter.LID}}">Zurück</a>

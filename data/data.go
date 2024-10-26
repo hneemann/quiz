@@ -325,6 +325,7 @@ func (t *Task) TID() int {
 }
 
 type Chapter struct {
+	StepByStep  bool `xml:"stepByStep,attr"`
 	lid         LectureId
 	cid         int
 	Title       string

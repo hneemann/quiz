@@ -16,15 +16,22 @@ import (
 	"time"
 )
 
-func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, cookieKey []byte, sessions *session.Sessions) {
+func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, cookieKey []byte, sessions *session.Sessions) bool {
 	clientID := os.Getenv("CLIENT_ID")
 	clientSecret := os.Getenv("CLIENT_SECRET")
 	keyPath := os.Getenv("KEY_PATH")
 	issuer := os.Getenv("ISSUER")
 	tokenIdAttr := os.Getenv("ID_TOKEN_ID_ATTR")
+	tokenRoleAttr := os.Getenv("ID_TOKEN_ROLE_ATTR")
+	tokenRoleAdminValue := os.Getenv("ID_TOKEN_ADMIN_VALUE")
 	callbackHost := os.Getenv("HOST")
 	scopes := strings.Split(os.Getenv("SCOPES"), " ")
 	responseMode := os.Getenv("RESPONSE_MODE")
+
+	if clientID == "" || issuer == "" || clientSecret == "" || callbackHost == "" {
+		log.Println("missing oidc environment variables: CLIENT_ID, ISSUER, CLIENT_SECRET, HOST, SCOPES, ID_TOKEN_ID_ATTR, ID_TOKEN_ROLE_ATTR, ID_TOKEN_ADMIN_VALUE")
+		return false
+	}
 
 	redirectURI := callbackHost + callbackPath
 	cookieHandler := httphelper.NewCookieHandler(cookieKey, cookieKey, httphelper.WithUnsecure())
@@ -100,11 +107,19 @@ func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, cookieKey
 			http.Error(w, "no id found in IDToken", 504)
 			return
 		}
-		log.Println("oidc id:", ident, m)
 
-		sessions.Create(ident, false, w)
+		admin := false
+		if a, ok := m[tokenRoleAttr]; ok {
+			admin = a == tokenRoleAdminValue
+		}
+
+		log.Println("oidc id:", ident, admin)
+
+		sessions.Create(ident, admin, w)
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 
 	mux.Handle(callbackPath, rp.CodeExchangeHandler(unmarshalToken, provider))
+
+	return true
 }

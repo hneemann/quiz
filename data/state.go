@@ -10,6 +10,7 @@ import (
 
 type LectureState struct {
 	ShowSolutions bool
+	ShowAllTasks  bool
 }
 
 type LectureStates struct {

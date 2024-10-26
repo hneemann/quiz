@@ -14,9 +14,11 @@
 <form action="." method="post">
     <p>
         <input name="showSolutions" type="checkbox" value="true" {{if .Settings.ShowSolutions}}checked="true"{{end}}/>
-        <label for="showSolutions">Lösungen anzeigen</label><br/>
+        <label for="showSolutions">Lösungen anzeigen erlauben</label><br/>
+        <input name="showAllTasks" type="checkbox" value="true" {{if .Settings.ShowAllTasks}}checked="true"{{end}}/>
+        <label for="showAllTasks">Alle Aufgaben verfügbar</label><br/>
     </p>
-    <button type="submit">Setzen</button>
+    <button type="submit">Speichern</button>
 </form>
   </div>
 

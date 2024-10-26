@@ -6,6 +6,7 @@ import (
 	"flag"
 	"github.com/hneemann/quiz/data"
 	"github.com/hneemann/quiz/server"
+	"github.com/hneemann/quiz/server/myOidc"
 	"github.com/hneemann/quiz/server/session"
 	"log"
 	"net/http"
@@ -45,7 +46,7 @@ func main() {
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
 	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures)))
 	mux.Handle("/lecture/", sessions.Wrap(server.CreateLecture(lectures)))
-	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures)))
+	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures, states)))
 	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures, states)))
 	mux.Handle("/admin/", sessions.WrapAdmin(server.CreateAdmin(lectures)))
 	mux.Handle("/statistics/", sessions.WrapAdmin(server.CreateStatistics(lectures, sessions)))
@@ -53,10 +54,17 @@ func main() {
 	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))
 	mux.Handle("/logout", sessions.Wrap(session.LogoutHandler(sessions)))
 
-	loginTemp := server.Templates.Lookup("login.html")
-	mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
+	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte("test1234test1234"), sessions)
 
-	//myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte("test1234test1234"), sessions)
+	if !isOidc {
+		if *debug {
+			log.Println("start server without login")
+			loginTemp := server.Templates.Lookup("login.html")
+			mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
+		} else {
+			log.Fatal("no login method")
+		}
+	}
 
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}
 
