@@ -24,9 +24,11 @@
   <div class="lecture">
     <h3>Statistik</h3>
     {{range .List}}
-      <p style="margin-top:1.5em;">
         <a class="nav" href="/statistics/?id={{.Id}}">{{.Title}}</a>
-      </p>
+    {{end}}
+    <h3>Einstellungen</h3>
+    {{range .List}}
+        <a class="nav" href="/settings/{{.Id}}/">{{.Title}}</a>
     {{end}}
   </div>
 

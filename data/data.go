@@ -293,8 +293,8 @@ type Input struct {
 }
 
 type Task struct {
-	lid       string
-	lHash     string
+	lid       LectureId
+	lHash     LectureHash
 	cid       int
 	tid       int
 	Name      string
@@ -309,11 +309,11 @@ type InnerId struct {
 }
 
 type TaskId struct {
-	LHash   string
+	LHash   LectureHash
 	InnerId InnerId
 }
 
-func (t *Task) LID() string {
+func (t *Task) LID() LectureId {
 	return t.lid
 }
 
@@ -325,14 +325,14 @@ func (t *Task) TID() int {
 }
 
 type Chapter struct {
-	lid         string
+	lid         LectureId
 	cid         int
 	Title       string
 	Description string
 	Task        []*Task
 }
 
-func (c *Chapter) LID() string {
+func (c *Chapter) LID() LectureId {
 	return c.lid
 }
 
@@ -347,23 +347,26 @@ func (c *Chapter) GetTask(number int) (*Task, error) {
 	return c.Task[number], nil
 }
 
+type LectureId string
+type LectureHash string
+
 type Lecture struct {
-	Id          string `xml:"id,attr"`
+	Id          LectureId `xml:"id,attr"`
 	Title       string
 	Author      string
 	AuthorEMail string
 	Description string
-	hash        string
+	hash        LectureHash
 	Chapter     []*Chapter
 	folder      string
 	files       map[string][]byte
 }
 
-func (l *Lecture) Hash() string {
+func (l *Lecture) Hash() LectureHash {
 	return l.hash
 }
 
-func (l *Lecture) LID() string {
+func (l *Lecture) LID() LectureId {
 	return l.Id
 }
 
@@ -402,6 +405,10 @@ func (l *Lecture) Init() error {
 				task.Name = fmt.Sprintf("Aufgabe %d", tid+1)
 			} else {
 				task.Name = fmt.Sprintf("Aufgabe %d: %s", tid+1, task.Name)
+			}
+
+			if len(task.Input) == 0 {
+				return fmt.Errorf("no input in chapter '%s' task '%s'", chapter.Title, task.Name)
 			}
 
 			vars := make(map[string]InputType)
@@ -486,7 +493,7 @@ func (l *Lecture) CanReload() bool {
 
 type Lectures struct {
 	rwMutex  sync.RWMutex
-	lectures map[string]*Lecture
+	lectures map[LectureId]*Lecture
 	list     []*Lecture
 	folder   string
 }
@@ -496,7 +503,7 @@ func (l *Lectures) insert(lecture *Lecture) {
 	defer l.rwMutex.Unlock()
 
 	if l.lectures == nil {
-		l.lectures = make(map[string]*Lecture)
+		l.lectures = make(map[LectureId]*Lecture)
 	}
 
 	l.lectures[lecture.Id] = lecture
@@ -526,7 +533,7 @@ func (l *Lectures) List() []*Lecture {
 	return l.list
 }
 
-func (l *Lectures) GetLecture(id string) (*Lecture, error) {
+func (l *Lectures) GetLecture(id LectureId) (*Lecture, error) {
 	l.rwMutex.RLock()
 	defer l.rwMutex.RUnlock()
 
@@ -540,7 +547,7 @@ func (l *Lectures) GetLecture(id string) (*Lecture, error) {
 
 func (l *Lectures) add(lecture *Lecture) {
 	if l.lectures == nil {
-		l.lectures = make(map[string]*Lecture)
+		l.lectures = make(map[LectureId]*Lecture)
 	}
 	l.lectures[lecture.Id] = lecture
 }
@@ -551,7 +558,7 @@ func (l *Lectures) Uploaded(file []byte) error {
 		return err
 	}
 
-	f, err := os.Create(filepath.Join(l.folder, lecture.Id+".zip"))
+	f, err := os.Create(filepath.Join(l.folder, string(lecture.Id)+".zip"))
 	if err != nil {
 		return err
 	}
@@ -564,7 +571,7 @@ func (l *Lectures) Uploaded(file []byte) error {
 	return nil
 }
 
-func (l *Lectures) Reload(id string) (*Lecture, error) {
+func (l *Lectures) Reload(id LectureId) (*Lecture, error) {
 	if l.lectures == nil {
 		return nil, fmt.Errorf("no lectures available")
 	}
@@ -610,7 +617,7 @@ func New(r io.Reader) (*Lecture, error) {
 	if err != nil {
 		return nil, err
 	}
-	l.hash = h.get()
+	l.hash = LectureHash(h.get())
 
 	err = l.Init()
 	if err != nil {
@@ -805,6 +812,18 @@ var myParser = value.New().
 		f.AddStaticFunction("cmpValues", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
                                                     let is=isExp.eval([]);
+													if expected=0 
+                                                    then abs(is)<percent/100
+                                                    else
+                                                      let dif=abs((is-expected)/expected*100);
+                                                      dif<percent`, "expected", "isStr", "percent")),
+			Args:   3,
+			IsPure: true,
+		}.SetDescription("expected", "is", "percent",
+			"compares two values and returns true if the difference is less than the given percent of the expected value"))
+		f.AddStaticFunction("cmpValuesAbs", funcGen.Function[value.Value]{
+			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
+                                                    let is=abs(isExp.eval([]));
 													if expected=0 
                                                     then abs(is)<percent/100
                                                     else

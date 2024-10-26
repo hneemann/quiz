@@ -51,10 +51,10 @@ var funcMap = template.FuncMap{
 	"dec": func(i int) int {
 		return i - 1
 	},
-	"markdown": func(raw string, LId string) template.HTML { return fromMarkdown(raw, LId) },
+	"markdown": func(raw string, LId data.LectureId) template.HTML { return fromMarkdown(raw, LId) },
 }
 
-func fromMarkdown(raw string, LId string) template.HTML {
+func fromMarkdown(raw string, LId data.LectureId) template.HTML {
 	// create Markdown parser with extensions
 	extensions := parser.CommonExtensions |
 		parser.AutoHeadingIDs |
@@ -79,7 +79,7 @@ func fromMarkdown(raw string, LId string) template.HTML {
 	return template.HTML(markdown.Render(doc, renderer))
 }
 
-func createRenderHook(LId string) html.RenderNodeFunc {
+func createRenderHook(LId data.LectureId) html.RenderNodeFunc {
 	return func(w io.Writer, node ast.Node, entering bool) (ast.WalkStatus, bool) {
 		switch n := node.(type) {
 		case *ast.Math:
@@ -100,7 +100,7 @@ func createRenderHook(LId string) html.RenderNodeFunc {
 				n.Attribute = attr
 
 				name := string(n.Destination)
-				url := "/image/" + LId + "/" + name
+				url := "/image/" + string(LId) + "/" + name
 				n.Destination = []byte(url)
 			}
 			return ast.GoToNext, false
@@ -160,7 +160,7 @@ type lectureData struct {
 	session *session.Session
 }
 
-func (cd lectureData) Completed(hash string, cid int) int {
+func (cd lectureData) Completed(hash data.LectureHash, cid int) int {
 	if cd.session == nil {
 		return 0
 	}
@@ -179,7 +179,7 @@ func (cd lectureData) Avail(cid int) int {
 
 func CreateLecture(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		lectureId, _ := getStrFromPath(r.URL.Path)
+		lectureId, _ := getLectureFromPath(r.URL.Path)
 		lecture, err := lectures.GetLecture(lectureId)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
@@ -200,6 +200,11 @@ func getStrFromPath(p string) (string, string) {
 		p = p[:len(p)-1]
 	}
 	return path.Base(p), path.Dir(p)
+}
+
+func getLectureFromPath(p string) (data.LectureId, string) {
+	str, n := getStrFromPath(p)
+	return data.LectureId(str), n
 }
 
 func getIntFromPath(p string) (int, string) {
@@ -228,7 +233,7 @@ func (cd chapterData) Completed(id data.TaskId) bool {
 func CreateChapter(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, next := getIntFromPath(r.URL.Path)
-		l, _ := getStrFromPath(next)
+		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
@@ -253,15 +258,15 @@ func CreateChapter(lectures *data.Lectures) http.Handler {
 var taskTemp = Templates.Lookup("task.html")
 
 type taskData struct {
-	HasResult        bool
-	ShowResultButton bool
-	Task             *data.Task
-	Answers          data.DataMap
-	Result           map[string]string
-	Next             string
-	Ok               bool
-	ShowReload       bool
-	ReloadError      error
+	HasResult           bool
+	ShowSolutionsButton bool
+	Task                *data.Task
+	Answers             data.DataMap
+	Result              map[string]string
+	Next                string
+	Ok                  bool
+	ShowReload          bool
+	ReloadError         error
 }
 
 func (td taskData) GetAnswer(id string) string {
@@ -282,11 +287,11 @@ func (td taskData) GetResult(id string) string {
 	return td.Result[id]
 }
 
-func CreateTask(lectures *data.Lectures) http.Handler {
+func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t, next := getIntFromPath(r.URL.Path)
 		c, next := getIntFromPath(next)
-		l, _ := getStrFromPath(next)
+		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
 			http.Error(w, "invalid lecture number", http.StatusBadRequest)
@@ -315,14 +320,14 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 			return
 		}
 
-		showResult := false
+		showSolutions := states.Get(lecture.Id).ShowSolutions
 		showReload := false
 		if ses, ok := r.Context().Value(session.Key).(*session.Session); ok {
-			showResult = ses.IsAdmin()
+			showSolutions = showSolutions || ses.IsAdmin()
 			showReload = ses.IsAdmin() && lecture.CanReload()
 		}
 
-		td := taskData{Task: task, Answers: data.DataMap{}, ShowResultButton: showResult, ShowReload: showReload, ReloadError: reloadError}
+		td := taskData{Task: task, Answers: data.DataMap{}, ShowSolutionsButton: showSolutions, ShowReload: showReload, ReloadError: reloadError}
 
 		if r.Method == http.MethodPost {
 			err = r.ParseForm()
@@ -339,7 +344,7 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 					td.Answers[i.Id] = a
 				}
 			}
-			showResult := r.Form.Get("showResult") != ""
+			showResult := showSolutions && r.Form.Get("showResult") != ""
 			td.Result = task.Validate(td.Answers, showResult)
 			if len(td.Result) == 0 {
 
@@ -365,7 +370,7 @@ func CreateTask(lectures *data.Lectures) http.Handler {
 func CreateImages(lectures *data.Lectures) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		file, next := getStrFromPath(r.URL.Path)
-		l, _ := getStrFromPath(next)
+		l, _ := getLectureFromPath(next)
 
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
@@ -449,7 +454,7 @@ type StatsTask struct {
 
 func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
+		id := data.LectureId(r.URL.Query().Get("id"))
 		lecture, err := lectures.GetLecture(id)
 		if err != nil {
 			http.Redirect(w, r, "/admin", http.StatusFound)
@@ -480,6 +485,47 @@ func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.
 		}
 
 		err = statsViewTemp.Execute(w, stats)
+		if err != nil {
+			log.Println(err)
+		}
+	})
+}
+
+var settingsTemp = Templates.Lookup("settings.html")
+
+type settingsData struct {
+	Title    string
+	Settings data.LectureState
+}
+
+func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, _ := getLectureFromPath(r.URL.Path)
+		lecture, err := lectures.GetLecture(id)
+		if err != nil {
+			http.Error(w, "invalid lecture number", http.StatusBadRequest)
+			return
+		}
+
+		settings := states.Get(id)
+
+		if r.Method == http.MethodPost {
+			err := r.ParseForm()
+			if err != nil {
+				respondWithError(w, err)
+				return
+			}
+
+			settings.ShowSolutions = r.Form.Get("showSolutions") == "true"
+
+			err = states.SetState(id, settings)
+			if err != nil {
+				respondWithError(w, err)
+				return
+			}
+		}
+
+		err = settingsTemp.Execute(w, settingsData{Title: lecture.Title, Settings: settings})
 		if err != nil {
 			log.Println(err)
 		}

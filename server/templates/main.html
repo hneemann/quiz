@@ -15,13 +15,17 @@
     <div class="lecture">
       <h2>{{.Title}}</h2>
       <p>{{markdown .Description .LID}}</p>
+      <p style="font-size:80%;text-align:right;margin-bottom:-1em">{{.Author}}</p>
     </div>
     </a>
   {{end}}
 
-  {{if .Admin}}
-  <p><a class="nav" href="/admin">Administration</a></p>
-  {{end}}
+  <p>
+    <a class="nav" href="/logout">Logout</a>
+    {{if .Admin}}
+    <a class="nav" href="/admin">Administration</a>
+    {{end}}
+  </p>
   </div>
 
 </body>

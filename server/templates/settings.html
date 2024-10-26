@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Einstellungen</title>
+  <link rel="icon" type="image/svg" href="/assets/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+</head>
+<body>
+  <div class="main">
+  <h2>{{.Title}}</h2>
+
+  <div class="lecture">
+<form action="." method="post">
+    <p>
+        <input name="showSolutions" type="checkbox" value="true" {{if .Settings.ShowSolutions}}checked="true"{{end}}/>
+        <label for="showSolutions">Lösungen anzeigen</label><br/>
+    </p>
+    <button type="submit">Setzen</button>
+</form>
+  </div>
+
+  <p><a class="nav" href="/admin/">Zurück</a></p>
+
+  </div>
+</body>
+</html>

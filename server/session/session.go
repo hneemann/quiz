@@ -21,7 +21,7 @@ type Session struct {
 	mutex        sync.Mutex
 	time         time.Time
 	admin        bool
-	completed    map[string]map[data.InnerId]bool
+	completed    map[data.LectureHash]map[data.InnerId]bool
 	persistToken string
 	dataModified bool
 }
@@ -44,7 +44,7 @@ func (s *Session) TaskCompleted(id data.TaskId) {
 	defer s.mutex.Unlock()
 
 	if s.completed == nil {
-		s.completed = make(map[string]map[data.InnerId]bool)
+		s.completed = make(map[data.LectureHash]map[data.InnerId]bool)
 	}
 
 	lmap, ok := s.completed[id.LHash]
@@ -77,7 +77,7 @@ func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 
 // ChapterCompleted returns the number of tasks completed in a chapter.
 // The hash is the hash of the lecture and the cid is the chapter id.
-func (s *Session) ChapterCompleted(hash string, cid int) int {
+func (s *Session) ChapterCompleted(hash data.LectureHash, cid int) int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -136,7 +136,7 @@ func (s *Session) restore(path string) {
 		log.Println("error reading session data", err)
 		return
 	}
-	s.completed = make(map[string]map[data.InnerId]bool)
+	s.completed = make(map[data.LectureHash]map[data.InnerId]bool)
 	err = serialize.New().Read(bytes.NewReader(fileData), &s.completed)
 	if err != nil {
 		log.Println("error unmarshal session data", err)
@@ -194,7 +194,6 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 	go func() {
 		for {
 			time.Sleep(10 * time.Minute)
-			log.Println("cleaning sessions")
 			var sl []*Session
 			s.mutex.Lock()
 			for k, v := range s.sessions {
@@ -213,7 +212,7 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 	return s
 }
 
-func (s *Sessions) Stats(hash string) ([]map[data.InnerId]bool, error) {
+func (s *Sessions) Stats(hash data.LectureHash) ([]map[data.InnerId]bool, error) {
 	s.PersistAll()
 
 	list, err := os.ReadDir(s.dataFolder)
@@ -259,6 +258,21 @@ func (s *Sessions) get(r *http.Request) (*Session, bool) {
 		}
 	}
 	return nil, false
+}
+
+func (s *Sessions) logout(w http.ResponseWriter, r *http.Request) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	cookie, err := r.Cookie(cookieName)
+	if err == nil {
+		session, ok := s.sessions[cookie.Value]
+		if ok {
+			session.persist(path.Join(s.dataFolder, session.persistToken))
+			delete(s.sessions, cookie.Value)
+		}
+	}
+	http.SetCookie(w, &http.Cookie{Name: cookieName, Value: "", Path: "/", MaxAge: -1})
 }
 
 func (s *Sessions) Create(persistToken string, admin bool, w http.ResponseWriter) *Session {
@@ -393,4 +407,11 @@ func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authent
 			log.Println(err)
 		}
 	}
+}
+
+func LogoutHandler(sessions *Sessions) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessions.logout(w, r)
+		http.Redirect(w, r, "/", http.StatusFound)
+	})
 }

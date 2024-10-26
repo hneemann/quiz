@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"github.com/hneemann/quiz/data"
 	"github.com/hneemann/quiz/server"
@@ -10,38 +11,47 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 )
 
 func Authenticate(user, pass string) (string, bool, error) {
-	return "default", true, nil
+	if user == "admin" && pass == "admin" {
+		return "admin", true, nil
+	} else if user != "" {
+		return user, false, nil
+	}
+	return "", false, errors.New("no user")
 }
 
 func main() {
-	lectureFolder := flag.String("lectures", "/home/hneemann/Dokumente/DHBW/Projekte/Quiz/Beispiele", "lecture folder")
-	dataFolder := flag.String("data", "sessionData", "data folder")
+	dataFolder := flag.String("data", "/home/hneemann/Dokumente/DHBW/Projekte/Quiz", "data folder")
 	cert := flag.String("cert", "", "certificate file e.g. cert.pem")
 	key := flag.String("key", "", "key file e.g. key.pem")
 	debug := flag.Bool("debug", true, "starts server in debug mode")
 	port := flag.Int("port", 8080, "port")
 	flag.Parse()
 
-	lectures, err := data.ReadLectures(*lectureFolder)
+	lectures, err := data.ReadLectures(ensureFolderExists(filepath.Join(*dataFolder, "lectures")))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sessions := session.New(*dataFolder, lectures)
+	sessions := session.New(ensureFolderExists(filepath.Join(*dataFolder, "sessions")), lectures)
+
+	states := data.NewLectureStates(filepath.Join(*dataFolder, "state"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
 	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures)))
 	mux.Handle("/lecture/", sessions.Wrap(server.CreateLecture(lectures)))
 	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures)))
-	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures)))
+	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures, states)))
 	mux.Handle("/admin/", sessions.WrapAdmin(server.CreateAdmin(lectures)))
 	mux.Handle("/statistics/", sessions.WrapAdmin(server.CreateStatistics(lectures, sessions)))
+	mux.Handle("/settings/", sessions.WrapAdmin(server.CreateSettings(lectures, states)))
 	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))
+	mux.Handle("/logout", sessions.Wrap(session.LogoutHandler(sessions)))
 
 	loginTemp := server.Templates.Lookup("login.html")
 	mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
@@ -79,6 +89,14 @@ func main() {
 	}
 
 	sessions.PersistAll()
+}
+
+func ensureFolderExists(path string) string {
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return path
 }
 
 func Cache(parent http.Handler, minutes int, debug bool) http.Handler {
