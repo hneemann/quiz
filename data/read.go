@@ -15,13 +15,17 @@ func ReadLectures(folder string) (*Lectures, error) {
 	}
 	lectures := Lectures{folder: folder}
 	for _, f := range l {
+		name := f.Name()
+		if len(name) > 0 && name[0] == '.' {
+			continue
+		}
 		var lecture *Lecture
 		if f.IsDir() {
 			lecture, err = readFolder(filepath.Join(folder, f.Name()))
 			if err != nil {
 				return nil, err
 			}
-		} else if filepath.Ext(f.Name()) == ".zip" {
+		} else if filepath.Ext(name) == ".zip" {
 			lecture, err = readZipFile(filepath.Join(folder, f.Name()))
 			if err != nil {
 				return nil, err

@@ -22,6 +22,9 @@
           <td class="result-c1c"><input type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $.GetAnswer .Id}}checked{{end}}></td>
           <td class="result-c2c"><label for="input_{{.Id}}">{{markdown .Label $.Task.LID}}</label></td>
         {{end}}
+        {{if $.IsHook .Id}}
+           <td><img class="progressIcon" src="/assets/completed.svg" /></td>
+        {{end}}
       </tr>
         {{if $.GetResult .Id}}
         <tr class="result"><td></td><td class="result"><div class="result">{{markdown ($.GetResult .Id) $.Task.LID}}</div></td></tr>

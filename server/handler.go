@@ -311,6 +311,11 @@ func (td taskData) GetResult(id string) string {
 	return td.Result[id]
 }
 
+func (td taskData) IsHook(id string) bool {
+	_, isMessage := td.Result[id]
+	return td.HasResult && !isMessage
+}
+
 func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t, next := getIntFromPath(r.URL.Path)
