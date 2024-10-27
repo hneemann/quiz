@@ -25,7 +25,7 @@ func TestInit(t *testing.T) {
             <Input id="val1" type="text">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>cmpValues(40,a.val2,1)</Expression>
+                    <Expression>cmpValues(40,answer.val2,1)</Expression>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
                 </Validator>
             </Input>
@@ -62,7 +62,7 @@ func TestInit(t *testing.T) {
                 <Label>$U_Q/\u{V}$:</Label>
             </Input>
             <Validator>
-                <Expression>cmpValues(40,a.val2,1)</Expression>
+                <Expression>cmpValues(40,answer.val2,1)</Expression>
                 <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
             </Validator>
         </Task>
@@ -85,7 +85,7 @@ func TestInit(t *testing.T) {
                 <Label>$U_Q/\u{V}$:</Label>
             </Input>
             <Validator>
-                <Expression>cmpValues(40,a.val2,1)</Expression>
+                <Expression>cmpValues(40,answer.val2,1)</Expression>
                 <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
             </Validator>
         </Task>
@@ -108,7 +108,7 @@ func TestInit(t *testing.T) {
                 <Label>$U_Q/\u{V}$:</Label>
             </Input>
             <Validator>
-                <Expression>cmpValues(40,a.val2,1)</Expression>
+                <Expression>cmpValues(40,answer.val2,1)</Expression>
                 <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
             </Validator>
         </Task>
@@ -127,7 +127,7 @@ func TestInit(t *testing.T) {
             <Input id="val1" type="text">
                 <Label></Label>
                 <Validator>
-                    <Expression>cmpValues(40,a.val1,1)</Expression>
+                    <Expression>cmpValues(40,answer.val1,1)</Expression>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
                 </Validator>
             </Input>
@@ -171,7 +171,7 @@ func TestTest(t *testing.T) {
             <Input id="val1" type="text">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>cmpValues(40,a.val1,1)</Expression>
+                    <Expression>cmpValues(40,answer.val1,1)</Expression>
                     <Test val1="40" ok="yes"/>
                     <Test val1="41" ok="no"/>
                     <Test val1="39" ok="no"/>
@@ -194,7 +194,7 @@ func TestTest(t *testing.T) {
             <Input id="val1" type="text">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>cmpValues(40,a.val1,1)</Expression>
+                    <Expression>cmpValues(40,answer.val1,1)</Expression>
                     <Test val2="40" ok="yes"/>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
                 </Validator>
@@ -215,7 +215,7 @@ func TestTest(t *testing.T) {
             <Input id="val1" type="checkbox">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>a.val1</Expression>
+                    <Expression>answer.val1</Expression>
                     <Test val1="40" ok="yes"/>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
                 </Validator>
@@ -236,7 +236,7 @@ func TestTest(t *testing.T) {
             <Input id="val1" type="checkbox">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>a.val1</Expression>
+                    <Expression>answer.val1</Expression>
                     <Test val1="true" ok="yes"/>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
                 </Validator>
@@ -257,7 +257,7 @@ func TestTest(t *testing.T) {
             <Input id="val1" type="checkbox">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>if a.val1 then "Teststring" else true</Expression>
+                    <Expression>if answer.val1 then "Teststring" else true</Expression>
                     <Test val1="true">Teststring2</Test>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>
                 </Validator>
@@ -278,7 +278,7 @@ func TestTest(t *testing.T) {
             <Input id="val1" type="checkbox">
                 <Label>$U_Q/\u{V}$:</Label>
                 <Validator>
-                    <Expression>if a.val1 then "Teststring" else true</Expression>
+                    <Expression>if answer.val1 then "Teststring" else true</Expression>
                     <Test val1="true">Teststring</Test>
                     <Test val1="false" ok="yes"/>
                     <Explanation>Der Wert beträgt $U_Q=40\u{V}$.</Explanation>

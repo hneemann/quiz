@@ -286,15 +286,14 @@ type taskData struct {
 	ShowSolutionsButton bool
 	Task                *data.Task
 	Answers             data.DataMap
-	Result              map[string]string
-	inputHasValidator   map[string]bool
+	Result              map[data.InputId]string
 	Next                string
 	Ok                  bool
 	ShowReload          bool
 	ReloadError         error
 }
 
-func (td *taskData) GetAnswer(id string) string {
+func (td *taskData) GetAnswer(id data.InputId) string {
 	switch a := td.Answers[id].(type) {
 	case bool:
 		if a {
@@ -308,24 +307,21 @@ func (td *taskData) GetAnswer(id string) string {
 	return ""
 }
 
-func (td *taskData) GetResult(id string) string {
+func (td *taskData) GetResult(id data.InputId) string {
 	return td.Result[id]
 }
 
-func (td *taskData) IsHook(id string) bool {
-	if td.inputHasValidator == nil {
-		td.inputHasValidator = map[string]bool{}
-		for _, i := range td.Task.Input {
-			td.inputHasValidator[i.Id] = i.Validator != nil
-		}
+func (td *taskData) HasHook(id data.InputId) bool {
+	if !td.HasResult {
+		return false
 	}
 
-	if !td.inputHasValidator[id] {
+	if !td.Task.InputHasValidator(id) {
 		return false
 	}
 
 	_, isMessage := td.Result[id]
-	return td.HasResult && !isMessage
+	return !isMessage
 }
 
 func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handler {
@@ -384,7 +380,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 				return
 			}
 			for _, i := range task.Input {
-				a := r.Form.Get("input_" + i.Id)
+				a := r.Form.Get("input_" + string(i.Id))
 				switch i.Type {
 				case data.Checkbox:
 					td.Answers[i.Id] = strings.ToLower(a) == "on"

@@ -22,7 +22,7 @@ func Authenticate(user, pass string) (string, bool, error) {
 	} else if user != "" {
 		return user, false, nil
 	}
-	return "", false, errors.New("no user")
+	return "", false, errors.New("Kein Benutzername angegeben!")
 }
 
 func main() {
@@ -100,7 +100,15 @@ func main() {
 }
 
 func ensureFolderExists(path string) string {
-	err := os.MkdirAll(path, 0755)
+	fi, err := os.Stat(path)
+	if err == nil {
+		if !fi.IsDir() {
+			log.Fatalf("path %s is not a directory", path)
+		}
+		return path
+	}
+
+	err = os.Mkdir(path, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}

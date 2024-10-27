@@ -56,14 +56,14 @@ func (it InputType) MarshalText() ([]byte, error) {
 }
 
 type Test struct {
-	data   map[string]string
+	data   map[InputId]string
 	result string
 }
 
 func (t *Test) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	data := make(map[string]string)
+	data := make(map[InputId]string)
 	for _, a := range start.Attr {
-		data[a.Name.Local] = a.Value
+		data[InputId(a.Name.Local)] = a.Value
 	}
 	var result string
 	err := d.DecodeElement(&result, &start)
@@ -86,7 +86,7 @@ func (t *Test) String() string {
 	return b.String()
 }
 
-func (t *Test) test(fu funcGen.Func[value.Value], avail map[string]InputType) error {
+func (t *Test) test(fu funcGen.Func[value.Value], avail map[InputId]InputType) error {
 	m := DataMap{}
 	var expectedOkStr string
 	for k, v := range t.data {
@@ -155,14 +155,14 @@ type Validator struct {
 }
 
 type collectVars struct {
-	used map[string]bool
+	used map[InputId]bool
 }
 
 func (c *collectVars) Visit(ast parser2.AST) bool {
 	if a, ok := ast.(*parser2.MapAccess); ok {
 		if i, ok := a.MapValue.(*parser2.Ident); ok {
 			if i.Name == "answer" {
-				c.used[a.Key] = true
+				c.used[InputId(a.Key)] = true
 			}
 		}
 	}
@@ -172,7 +172,7 @@ func (c *collectVars) Visit(ast parser2.AST) bool {
 // Init initializes the validator.
 // If thisVar is not empty, it has to be a used in the expression.
 // The vars map contains all variables that can be used in the expression.
-func (v *Validator) init(varsAvail map[string]InputType, mustBeUsed []string) error {
+func (v *Validator) init(varsAvail map[InputId]InputType, mustBeUsed []InputId) error {
 	if strings.TrimSpace(v.Expression) == "" {
 		return fmt.Errorf("no expression given")
 	}
@@ -188,7 +188,7 @@ func (v *Validator) init(varsAvail map[string]InputType, mustBeUsed []string) er
 		return err
 	}
 
-	varsUsed := collectVars{used: make(map[string]bool)}
+	varsUsed := collectVars{used: make(map[InputId]bool)}
 	a.Traverse(&varsUsed)
 
 	if len(varsUsed.used) == 0 {
@@ -271,7 +271,7 @@ func (v *Validator) Validate(m value.Map) (bool, string) {
 	}
 }
 
-func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string, showResult bool) {
+func (v *Validator) ToResultMap(m value.Map, id InputId, result map[InputId]string, showResult bool) {
 	if ok, msg := v.Validate(m); !ok {
 		if showResult {
 			if v.Explanation != "" {
@@ -285,22 +285,25 @@ func (v *Validator) ToResultMap(m value.Map, id string, result map[string]string
 	}
 }
 
+type InputId string
+
 type Input struct {
-	Id        string `xml:"id,attr"`
+	Id        InputId `xml:"id,attr"`
 	Label     string
 	Type      InputType `xml:"type,attr"`
 	Validator *Validator
 }
 
 type Task struct {
-	lid       LectureId
-	lHash     LectureHash
-	cid       int
-	tid       int
-	Name      string
-	Question  string
-	Input     []*Input
-	Validator *Validator
+	lid               LectureId
+	lHash             LectureHash
+	cid               int
+	tid               int
+	inputHasValidator map[InputId]bool
+	Name              string
+	Question          string
+	Input             []*Input
+	Validator         *Validator
 }
 
 type InnerId struct {
@@ -320,8 +323,16 @@ func (t *Task) LID() LectureId {
 func (t *Task) CID() int {
 	return t.cid
 }
+
 func (t *Task) TID() int {
 	return t.tid
+}
+
+func (t *Task) InputHasValidator(id InputId) bool {
+	if has, ok := t.inputHasValidator[id]; ok {
+		return has
+	}
+	return false
 }
 
 type Chapter struct {
@@ -412,7 +423,7 @@ func (l *Lecture) Init() error {
 				return fmt.Errorf("no input in chapter '%s' task '%s'", chapter.Title, task.Name)
 			}
 
-			vars := make(map[string]InputType)
+			vars := make(map[InputId]InputType)
 			for _, i := range task.Input {
 				if i.Id == "" {
 					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Title, task.Name)
@@ -432,13 +443,15 @@ func (l *Lecture) Init() error {
 				}
 			}
 
-			var needsToBeUsedInTaskValidator []string
+			hasValidator := make(map[InputId]bool)
+			var needsToBeUsedInTaskValidator []InputId
 			for _, i := range task.Input {
 				if i.Validator != nil {
-					err := i.Validator.init(vars, []string{i.Id})
+					err := i.Validator.init(vars, []InputId{i.Id})
 					if err != nil {
 						return fmt.Errorf("invalid expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Title, task.Name, err)
 					}
+					hasValidator[i.Id] = true
 				} else {
 					needsToBeUsedInTaskValidator = append(needsToBeUsedInTaskValidator, i.Id)
 				}
@@ -447,6 +460,7 @@ func (l *Lecture) Init() error {
 					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
 				}
 			}
+			task.inputHasValidator = hasValidator
 
 			if task.Validator != nil {
 				err := task.Validator.init(vars, needsToBeUsedInTaskValidator)
@@ -464,7 +478,7 @@ func (l *Lecture) Init() error {
 	return nil
 }
 
-func isIdent(id string) bool {
+func isIdent(id InputId) bool {
 	for i, c := range id {
 		if i == 0 {
 			if c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
@@ -627,10 +641,10 @@ func New(r io.Reader) (*Lecture, error) {
 	return &l, nil
 }
 
-type DataMap map[string]interface{}
+type DataMap map[InputId]interface{}
 
 func (d DataMap) Get(key string) (value.Value, bool) {
-	v, ok := d[key]
+	v, ok := d[InputId(key)]
 	if !ok {
 		return nil, false
 	}
@@ -654,7 +668,7 @@ func toValue(v interface{}) (value.Value, bool) {
 func (d DataMap) Iter(yield func(key string, v value.Value) bool) bool {
 	for k, v := range d {
 		if v, ok := toValue(v); ok {
-			if !yield(k, v) {
+			if !yield(string(k), v) {
 				return false
 			}
 		}
@@ -666,9 +680,9 @@ func (d DataMap) Size() int {
 	return len(d)
 }
 
-func (t *Task) Validate(input DataMap, showResult bool) map[string]string {
+func (t *Task) Validate(input DataMap, showResult bool) map[InputId]string {
 	m := value.NewMap(input)
-	result := make(map[string]string)
+	result := make(map[InputId]string)
 	t.Validator.ToResultMap(m, "_task_", result, showResult)
 	for _, i := range t.Input {
 		i.Validator.ToResultMap(m, i.Id, result, showResult)

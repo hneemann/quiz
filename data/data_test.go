@@ -36,7 +36,7 @@ func TestSimple(t *testing.T) {
             </Input>
             <Validator>
                 <Expression>
-                    a.elBau and a.zwei and !a.drei and !a.linear and a.nlinear
+                    answer.elBau and answer.zwei and !answer.drei and !answer.linear and answer.nlinear
                 </Expression>
                 <Explanation>Die Diode ist ein nichtlineares elektronisches Bauteil mit zwei Anschlüssen.</Explanation>
             </Validator>
@@ -90,7 +90,7 @@ Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5
             <Input id="func1" type="text">
                 <Label>$I_D=$</Label>
                 <Validator>
-                    <Expression>cmpFunc("is*exp(ud/ut)",a.func1.toLower(),["is","ud","ut"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
+                    <Expression>cmpFunc("is*exp(ud/ut)",answer.func1.toLower(),["is","ud","ut"],[[1,1,2],[0.001,1,3],[2,1,4]])</Expression>
                     <Help>Überlegen Sie sich, welchen Summanden man vernachlässigen kann.</Help>
                     <Explanation>Die Näherung lautet $I_D=I_S e^{\frac{U_D}{U_T}}$.</Explanation>
                 </Validator>
@@ -154,18 +154,18 @@ func TestParser(t *testing.T) {
 func TestValidator(t *testing.T) {
 	test := []struct {
 		expr    string
-		inputs  map[string]InputType
-		used    []string
+		inputs  map[InputId]InputType
+		used    []InputId
 		isValid bool
 	}{
-		{"1+2", map[string]InputType{"x": Text}, nil, false},
-		{"1+a.x", map[string]InputType{"x": Text}, nil, true},
-		{"1+a.y", map[string]InputType{"x": Text}, nil, false},
-		{"1+2", map[string]InputType{"x": Text}, []string{"x"}, false},
-		{"1+a.x", map[string]InputType{"x": Text}, []string{"x"}, true},
-		{"1+a.y", map[string]InputType{"x": Text}, []string{"x"}, false},
-		{"1+2", map[string]InputType{"x": Text, "y": Text}, nil, false},
-		{"a.x+a.y", map[string]InputType{"x": Text, "y": Text}, nil, true},
+		{"1+2", map[InputId]InputType{"x": Text}, nil, false},
+		{"1+answer.x", map[InputId]InputType{"x": Text}, nil, true},
+		{"1+answer.y", map[InputId]InputType{"x": Text}, nil, false},
+		{"1+2", map[InputId]InputType{"x": Text}, []InputId{"x"}, false},
+		{"1+answer.x", map[InputId]InputType{"x": Text}, []InputId{"x"}, true},
+		{"1+answer.y", map[InputId]InputType{"x": Text}, []InputId{"x"}, false},
+		{"1+2", map[InputId]InputType{"x": Text, "y": Text}, nil, false},
+		{"answer.x+answer.y", map[InputId]InputType{"x": Text, "y": Text}, nil, true},
 	}
 
 	for _, tst := range test {
