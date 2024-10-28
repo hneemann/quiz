@@ -297,8 +297,8 @@ type Input struct {
 type Task struct {
 	lid               LectureId
 	lHash             LectureHash
-	cid               int
-	tid               int
+	cid               ChapterId
+	tid               TaskId
 	inputHasValidator map[InputId]bool
 	Name              string
 	Question          string
@@ -306,12 +306,16 @@ type Task struct {
 	Validator         *Validator
 }
 
-type InnerId struct {
-	CId int
-	TId int
-}
+type (
+	ChapterId int
+	TaskId    int
+	InnerId   struct {
+		CId ChapterId
+		TId TaskId
+	}
+)
 
-type TaskId struct {
+type AbsTaskId struct {
 	LHash   LectureHash
 	InnerId InnerId
 }
@@ -320,11 +324,11 @@ func (t *Task) LID() LectureId {
 	return t.lid
 }
 
-func (t *Task) CID() int {
+func (t *Task) CID() ChapterId {
 	return t.cid
 }
 
-func (t *Task) TID() int {
+func (t *Task) TID() TaskId {
 	return t.tid
 }
 
@@ -338,7 +342,7 @@ func (t *Task) InputHasValidator(id InputId) bool {
 type Chapter struct {
 	StepByStep  bool `xml:"stepByStep,attr"`
 	lid         LectureId
-	cid         int
+	cid         ChapterId
 	Title       string
 	Description string
 	Task        []*Task
@@ -348,7 +352,7 @@ func (c *Chapter) LID() LectureId {
 	return c.lid
 }
 
-func (c *Chapter) CID() int {
+func (c *Chapter) CID() ChapterId {
 	return c.cid
 }
 
@@ -357,6 +361,10 @@ func (c *Chapter) GetTask(number int) (*Task, error) {
 		return nil, fmt.Errorf("task %d not found", number)
 	}
 	return c.Task[number], nil
+}
+
+func (c *Chapter) IsMoreBehind(tid TaskId) bool {
+	return int(tid) < len(c.Task)-1
 }
 
 type LectureId string
@@ -407,10 +415,10 @@ func (l *Lecture) Init() error {
 		if chapter.Title == "" {
 			return fmt.Errorf("no title in chapter %d", cid)
 		}
-		chapter.cid = cid
+		chapter.cid = ChapterId(cid)
 		for tid, task := range chapter.Task {
-			task.cid = cid
-			task.tid = tid
+			task.cid = ChapterId(cid)
+			task.tid = TaskId(tid)
 			task.lHash = l.hash
 
 			if task.Name == "" {
@@ -500,6 +508,13 @@ func (l *Lecture) GetChapter(number int) (*Chapter, error) {
 		return nil, fmt.Errorf("chapter %d not found", number)
 	}
 	return l.Chapter[number], nil
+}
+
+func (l *Lecture) TasksInChapter(cid ChapterId) int {
+	if cid < 0 || int(cid) >= len(l.Chapter) {
+		return 0
+	}
+	return len(l.Chapter[cid].Task)
 }
 
 func (l *Lecture) CanReload() bool {
@@ -691,8 +706,8 @@ func (t *Task) Validate(input DataMap, showResult bool) map[InputId]string {
 	return result
 }
 
-func (t *Task) GetId() TaskId {
-	return TaskId{LHash: t.lHash, InnerId: InnerId{CId: t.cid, TId: t.tid}}
+func (t *Task) GetId() AbsTaskId {
+	return AbsTaskId{LHash: t.lHash, InnerId: InnerId{CId: t.cid, TId: t.tid}}
 }
 
 type Expression struct {

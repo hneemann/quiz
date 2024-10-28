@@ -39,7 +39,7 @@ func (s *Session) IsAdmin() bool {
 }
 
 // TaskCompleted marks a task as completed.
-func (s *Session) TaskCompleted(id data.TaskId) {
+func (s *Session) TaskCompleted(id data.AbsTaskId) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -60,7 +60,7 @@ func (s *Session) TaskCompleted(id data.TaskId) {
 }
 
 // IsTaskCompleted returns true if the task is completed.
-func (s *Session) IsTaskCompleted(id data.TaskId) bool {
+func (s *Session) IsTaskCompleted(id data.AbsTaskId) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -77,7 +77,7 @@ func (s *Session) IsTaskCompleted(id data.TaskId) bool {
 
 // ChapterCompleted returns the number of tasks completed in a chapter.
 // The hash is the hash of the lecture and the cid is the chapter id.
-func (s *Session) ChapterCompleted(hash data.LectureHash, cid int) int {
+func (s *Session) ChapterCompleted(hash data.LectureHash, cid data.ChapterId) int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -176,6 +176,18 @@ type Sessions struct {
 	lectures   *data.Lectures
 }
 
+const (
+	sessionTimeoutMinutes         = 60
+	sessionCleanupIntervalMinutes = 20
+	maxSessionAge                 = time.Hour * 24 * 180 // after 180 days the session data is removed
+)
+
+// New creates a new session manager.
+// The dataFolder is the folder where the session data is stored.
+// The lectures are used to cleanup the session data by removing completed
+// tasks that are not in the lecture list anymore. This is necessary because
+// the lecture hash is used to identify the lecture and the hash can change
+// if the lecture is modified.
 func New(dataFolder string, lectures *data.Lectures) *Sessions {
 
 	if _, err := os.Stat(dataFolder); err != nil {
@@ -193,11 +205,11 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 
 	go func() {
 		for {
-			time.Sleep(10 * time.Minute)
+			time.Sleep(sessionCleanupIntervalMinutes * time.Minute)
 			var sl []*Session
 			s.mutex.Lock()
 			for k, v := range s.sessions {
-				if time.Since(v.time) > 30*time.Minute {
+				if time.Since(v.time) > sessionTimeoutMinutes*time.Minute {
 					delete(s.sessions, k)
 					sl = append(sl, v)
 				}
@@ -212,6 +224,11 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 	return s
 }
 
+// Stats returns the statistics for a lecture.
+// All stored session data is scanned for the given lecture hash.
+// This function also removes old session data.
+// All session files are reloaded from disc to avoid data races with
+// active sessions
 func (s *Sessions) Stats(hash data.LectureHash) ([]map[data.InnerId]bool, error) {
 	s.PersistAll()
 
@@ -224,7 +241,7 @@ func (s *Sessions) Stats(hash data.LectureHash) ([]map[data.InnerId]bool, error)
 		if !f.IsDir() {
 			filePath := filepath.Join(s.dataFolder, f.Name())
 			if fi, err := f.Info(); err == nil {
-				if time.Since(fi.ModTime()) > time.Hour*24*180 {
+				if time.Since(fi.ModTime()) > maxSessionAge {
 					err = os.Remove(filePath)
 					if err != nil {
 						log.Println("error removing old session file", err)
@@ -275,6 +292,7 @@ func (s *Sessions) logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: cookieName, Value: "", Path: "/", MaxAge: -1})
 }
 
+// Create creates a new session identified by the persistToken which is used as a file name.
 func (s *Sessions) Create(persistToken string, admin bool, w http.ResponseWriter) *Session {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -308,6 +326,7 @@ func (s *Sessions) Create(persistToken string, admin bool, w http.ResponseWriter
 	return session
 }
 
+// PersistAll persists all session data.
 func (s *Sessions) PersistAll() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -330,6 +349,7 @@ func createRandomString() string {
 
 const Key = "session"
 
+// Wrap wraps a http.Handler and adds the session data to the context.
 func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ses, ok := s.get(r)
@@ -344,6 +364,8 @@ func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 	})
 }
 
+// WrapAdmin wraps a http.Handler and adds the session data to the context.
+// If the session is not an admin session, the user is redirected to the login page.
 func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ses, ok := s.get(r)
@@ -358,21 +380,29 @@ func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 	})
 }
 
+// LoginData is used to render the login page.
 type LoginData struct {
 	Target string
 	Error  error
 }
 
+// Authenticator is used to authenticate a user.
+// The Authenticate method returns the user id and a flag if the user is an admin.
 type Authenticator interface {
 	Authenticate(user, pass string) (string, bool, error)
 }
 
+// AuthFunc is a function that implements the Authenticator interface.
 type AuthFunc func(user, pass string) (string, bool, error)
 
 func (a AuthFunc) Authenticate(user, pass string) (string, bool, error) {
 	return a(user, pass)
 }
 
+// LoginHandler returns a http.HandlerFunc that handles the login.
+// The loginTemp is the template used to render the login page.
+// The login page must contain a form with the fields username, password and target.
+// The auth is the authenticator used to authenticate the user.
 func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authenticator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
@@ -409,6 +439,7 @@ func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authent
 	}
 }
 
+// LogoutHandler returns a http.Handler that logs out the user.
 func LogoutHandler(sessions *Sessions) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessions.logout(w, r)

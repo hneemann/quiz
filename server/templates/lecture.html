@@ -17,7 +17,7 @@
       <h2>{{.Title}}</h2>
       {{markdown .Description .LID}}
       {{$c := $.Completed $.Lecture.Hash .CID}}
-      {{$a := $.Avail .CID}}
+      {{$a := $.Lecture.TasksInChapter .CID}}
       <div class="progress">
         {{if eq $c $a}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{$a}}{{end}}
       </div>

@@ -160,21 +160,11 @@ type lectureData struct {
 	session *session.Session
 }
 
-func (cd lectureData) Completed(hash data.LectureHash, cid int) int {
+func (cd lectureData) Completed(hash data.LectureHash, cid data.ChapterId) int {
 	if cd.session == nil {
 		return 0
 	}
 	return cd.session.ChapterCompleted(hash, cid)
-}
-
-func (cd lectureData) Avail(cid int) int {
-	if cd.session == nil {
-		return 0
-	}
-	if cid < 0 || cid >= len(cd.Lecture.Chapter) {
-		return 0
-	}
-	return len(cd.Lecture.Chapter[cid].Task)
 }
 
 func CreateLecture(lectures *data.Lectures) http.Handler {
@@ -224,18 +214,18 @@ type chapterData struct {
 	state   data.LectureState
 }
 
-func (cd chapterData) Completed(id data.TaskId) bool {
+func (cd chapterData) Completed(id data.AbsTaskId) bool {
 	if cd.session == nil {
 		return false
 	}
 	return cd.session.IsTaskCompleted(id)
 }
 
-func (cd chapterData) IsAvail(id data.TaskId) bool {
+func (cd chapterData) IsAvail(id data.AbsTaskId) bool {
 	return IsTaskAvail(id, cd.Chapter, &cd.state, cd.session)
 }
 
-func IsTaskAvail(id data.TaskId, c *data.Chapter, state *data.LectureState, session *session.Session) bool {
+func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, session *session.Session) bool {
 	if state.ShowAllTasks || id.InnerId.TId == 0 || !c.StepByStep {
 		return true
 	}
@@ -248,7 +238,7 @@ func IsTaskAvail(id data.TaskId, c *data.Chapter, state *data.LectureState, sess
 		return true
 	}
 
-	return session.IsTaskCompleted(data.TaskId{
+	return session.IsTaskCompleted(data.AbsTaskId{
 		LHash:   id.LHash,
 		InnerId: data.InnerId{id.InnerId.CId, id.InnerId.TId - 1},
 	})
@@ -400,7 +390,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			}
 			td.HasResult = true
 		}
-		if task.TID() < len(chapter.Task)-1 && (ses != nil && ses.IsTaskCompleted(task.GetId())) {
+		if chapter.IsMoreBehind(task.TID()) && (ses != nil && ses.IsTaskCompleted(task.GetId())) {
 			td.Next = fmt.Sprintf("/task/%s/%d/%d/", task.LID(), task.CID(), task.TID()+1)
 		}
 
