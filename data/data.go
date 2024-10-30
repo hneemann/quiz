@@ -319,11 +319,6 @@ func (t *Task) TID() TaskId {
 	return t.tid
 }
 
-func (t *Task) GetChapterNum() int {
-	ch, _ := t.lecture.GetChapterOfTask(t.tid)
-	return ch.num
-}
-
 func (t *Task) InputHasValidator(id InputId) bool {
 	if has, ok := t.inputHasValidator[id]; ok {
 		return has
@@ -333,7 +328,6 @@ func (t *Task) InputHasValidator(id InputId) bool {
 
 type Chapter struct {
 	StepByStep  bool `xml:"stepByStep,attr"`
-	num         int
 	lid         LectureId
 	Title       string
 	Description string
@@ -380,6 +374,13 @@ func (c *Chapter) GetPrevTaskId(id TaskId) (TaskId, bool) {
 
 type LectureId string
 
+type TaskInfo struct {
+	ChapterNum int
+	Chapter    *Chapter
+	TaskNum    int
+	Task       *Task
+}
+
 type Lecture struct {
 	Id             LectureId `xml:"id,attr"`
 	Title          string
@@ -387,7 +388,7 @@ type Lecture struct {
 	AuthorEMail    string
 	Description    string
 	Chapter        []*Chapter
-	availableTasks map[TaskId]*Chapter
+	availableTasks map[TaskId]TaskInfo
 	folder         string
 	files          map[string][]byte
 }
@@ -417,22 +418,24 @@ func (l *Lecture) Init() error {
 		return fmt.Errorf("author email is missing in lecture %s", l.Title)
 	}
 
-	l.availableTasks = make(map[TaskId]*Chapter)
+	l.Description = cleanUpMarkdown(l.Description)
+	l.availableTasks = make(map[TaskId]TaskInfo)
 	for cnum, chapter := range l.Chapter {
 		if chapter.Title == "" {
 			return fmt.Errorf("no title in chapter %d", cnum)
 		}
 		chapter.lid = l.Id
-		chapter.num = cnum
-		for tid, task := range chapter.Task {
+		chapter.Description = cleanUpMarkdown(chapter.Description)
+		for tNum, task := range chapter.Task {
 			task.tid = task.createId()
-			l.availableTasks[task.tid] = chapter
+			task.Question = cleanUpMarkdown(task.Question)
+			l.availableTasks[task.tid] = TaskInfo{ChapterNum: cnum, Chapter: chapter, TaskNum: tNum, Task: task}
 			task.lecture = l
 
 			if task.Name == "" {
-				task.Name = fmt.Sprintf("Aufgabe %d", tid+1)
+				task.Name = fmt.Sprintf("Aufgabe %d", tNum+1)
 			} else {
-				task.Name = fmt.Sprintf("Aufgabe %d: %s", tid+1, task.Name)
+				task.Name = fmt.Sprintf("Aufgabe %d: %s", tNum+1, task.Name)
 			}
 
 			if len(task.Input) == 0 {
@@ -441,6 +444,8 @@ func (l *Lecture) Init() error {
 
 			vars := make(map[InputId]InputType)
 			for _, i := range task.Input {
+				i.Label = cleanUpMarkdown(i.Label)
+
 				if i.Id == "" {
 					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Title, task.Name)
 				}
@@ -494,6 +499,42 @@ func (l *Lecture) Init() error {
 	return nil
 }
 
+// cleanUpMarkdown removes leading spaces from lines.
+// Avoids markdown rendering of code.
+func cleanUpMarkdown(md string) string {
+	md = strings.TrimRight(md, " \t\r\n")
+	md = strings.TrimLeft(md, "\n")
+
+	lines := strings.Split(md, "\n")
+	if len(lines) <= 1 {
+		return strings.TrimSpace(md)
+	}
+
+	spaces := math.MaxInt32
+	for _, line := range lines {
+		if len(line) > 0 {
+			s := strings.IndexFunc(line, func(r rune) bool {
+				return r != ' '
+			})
+			if s < spaces {
+				spaces = s
+			}
+		}
+	}
+	if spaces > 0 {
+		sb := strings.Builder{}
+		for _, line := range lines {
+			if len(line) > 0 {
+				sb.WriteString(line[spaces:])
+			}
+			sb.WriteString("\n")
+		}
+		r := sb.String()
+		return r
+	}
+	return md
+}
+
 func isIdent(id InputId) bool {
 	for i, c := range id {
 		if i == 0 {
@@ -511,9 +552,9 @@ func isIdent(id InputId) bool {
 	return true
 }
 
-func (l *Lecture) GetChapterOfTask(t TaskId) (*Chapter, error) {
+func (l *Lecture) GetTaskInfo(t TaskId) (TaskInfo, error) {
 	if c, ok := l.availableTasks[t]; !ok {
-		return nil, fmt.Errorf("task %s not found", t)
+		return TaskInfo{}, fmt.Errorf("task %s not found", t)
 	} else {
 		return c, nil
 	}
@@ -542,6 +583,16 @@ func (l *Lecture) HasTask(tid TaskId) bool {
 		return true
 	}
 	return false
+}
+
+func (l *Lecture) GetTaskInfoByNum(cn int, tn int) (TaskInfo, error) {
+	if cn < 0 || cn >= len(l.Chapter) {
+		return TaskInfo{}, fmt.Errorf("chapter %d not found", cn)
+	}
+	if tn < 0 || tn >= len(l.Chapter[cn].Task) {
+		return TaskInfo{}, fmt.Errorf("task %d not found", tn)
+	}
+	return l.availableTasks[l.Chapter[cn].Task[tn].tid], nil
 }
 
 type Lectures struct {
