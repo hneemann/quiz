@@ -3,14 +3,12 @@ package data
 import (
 	"bytes"
 	"crypto/sha1"
-	"encoding/base64"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/hneemann/parser2"
 	"github.com/hneemann/parser2/funcGen"
 	"github.com/hneemann/parser2/value"
-	"hash"
 	"io"
 	"log"
 	"math"
@@ -296,7 +294,6 @@ type Input struct {
 
 type Task struct {
 	lid               LectureId
-	lHash             LectureHash
 	cid               ChapterId
 	tid               TaskId
 	inputHasValidator map[InputId]bool
@@ -307,17 +304,12 @@ type Task struct {
 }
 
 type (
-	ChapterId int
-	TaskId    int
-	InnerId   struct {
-		CId ChapterId
-		TId TaskId
-	}
+	TaskId string
 )
 
 type AbsTaskId struct {
-	LHash   LectureHash
-	InnerId InnerId
+	LectureId LectureId
+	TaskId    TaskId
 }
 
 func (t *Task) LID() LectureId {
@@ -339,6 +331,8 @@ func (t *Task) InputHasValidator(id InputId) bool {
 	return false
 }
 
+type ChapterId int
+
 type Chapter struct {
 	StepByStep  bool `xml:"stepByStep,attr"`
 	lid         LectureId
@@ -356,34 +350,59 @@ func (c *Chapter) CID() ChapterId {
 	return c.cid
 }
 
-func (c *Chapter) GetTask(number int) (*Task, error) {
-	if number < 0 || number >= len(c.Task) {
-		return nil, fmt.Errorf("task %d not found", number)
+func (c *Chapter) GetTask(tid TaskId) (*Task, error) {
+	for _, task := range c.Task {
+		if task.TID() == tid {
+			return task, nil
+		}
 	}
-	return c.Task[number], nil
+	return nil, fmt.Errorf("task %s not found", tid)
 }
 
-func (c *Chapter) IsMoreBehind(tid TaskId) bool {
-	return int(tid) < len(c.Task)-1
+func (c *Chapter) IsTaskBehind(tid TaskId) (TaskId, bool) {
+	lastIndex := len(c.Task) - 1
+	for i, task := range c.Task {
+		if task.TID() == tid {
+			if i == lastIndex {
+				return "", false
+			}
+			return c.Task[i+1].TID(), true
+		}
+	}
+	return "", false
+}
+
+func (c *Chapter) IsFirstTask(id TaskId) bool {
+	if len(c.Task) == 0 {
+		return false
+	}
+	return c.Task[0].TID() == id
+}
+
+func (c *Chapter) GetTaskBefore(id TaskId) TaskId {
+	for i, task := range c.Task {
+		if task.TID() == id {
+			if i == 0 {
+				return ""
+			}
+			return c.Task[i-1].TID()
+		}
+	}
+	return ""
 }
 
 type LectureId string
-type LectureHash string
 
 type Lecture struct {
-	Id          LectureId `xml:"id,attr"`
-	Title       string
-	Author      string
-	AuthorEMail string
-	Description string
-	hash        LectureHash
-	Chapter     []*Chapter
-	folder      string
-	files       map[string][]byte
-}
-
-func (l *Lecture) Hash() LectureHash {
-	return l.hash
+	Id             LectureId `xml:"id,attr"`
+	Title          string
+	Author         string
+	AuthorEMail    string
+	Description    string
+	Chapter        []*Chapter
+	availableTasks map[TaskId]*Chapter
+	folder         string
+	files          map[string][]byte
 }
 
 func (l *Lecture) LID() LectureId {
@@ -411,15 +430,17 @@ func (l *Lecture) Init() error {
 		return fmt.Errorf("author email is missing in lecture %s", l.Title)
 	}
 
+	l.availableTasks = make(map[TaskId]*Chapter)
 	for cid, chapter := range l.Chapter {
 		if chapter.Title == "" {
 			return fmt.Errorf("no title in chapter %d", cid)
 		}
 		chapter.cid = ChapterId(cid)
 		for tid, task := range chapter.Task {
-			task.cid = ChapterId(cid)
-			task.tid = TaskId(tid)
-			task.lHash = l.hash
+			task.tid = task.createId()
+			l.availableTasks[task.tid] = chapter
+			task.cid = chapter.cid
+			task.lid = l.LID()
 
 			if task.Name == "" {
 				task.Name = fmt.Sprintf("Aufgabe %d", tid+1)
@@ -503,11 +524,11 @@ func isIdent(id InputId) bool {
 	return true
 }
 
-func (l *Lecture) GetChapter(number int) (*Chapter, error) {
-	if number < 0 || number >= len(l.Chapter) {
-		return nil, fmt.Errorf("chapter %d not found", number)
+func (l *Lecture) GetChapter(cid ChapterId) (*Chapter, error) {
+	if cid < 0 || int(cid) >= len(l.Chapter) {
+		return nil, fmt.Errorf("chapter %d not found", cid)
 	}
-	return l.Chapter[number], nil
+	return l.Chapter[cid], nil
 }
 
 func (l *Lecture) TasksInChapter(cid ChapterId) int {
@@ -519,6 +540,13 @@ func (l *Lecture) TasksInChapter(cid ChapterId) int {
 
 func (l *Lecture) CanReload() bool {
 	return l.folder != ""
+}
+
+func (l *Lecture) HasTask(tid TaskId) bool {
+	if _, ok := l.availableTasks[tid]; ok {
+		return true
+	}
+	return false
 }
 
 type Lectures struct {
@@ -623,31 +651,12 @@ func (l *Lectures) Reload(id LectureId) (*Lecture, error) {
 	}
 }
 
-type hashReader struct {
-	parent io.Reader
-	hasher hash.Hash
-}
-
-func (h *hashReader) Read(p []byte) (n int, err error) {
-	n, err = h.parent.Read(p)
-	if n > 0 {
-		h.hasher.Write(p[:n])
-	}
-	return
-}
-
-func (h *hashReader) get() string {
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(h.hasher.Sum(nil))
-}
-
 func New(r io.Reader) (*Lecture, error) {
 	var l Lecture
-	h := hashReader{parent: r, hasher: sha1.New()}
-	err := xml.NewDecoder(&h).Decode(&l)
+	err := xml.NewDecoder(r).Decode(&l)
 	if err != nil {
 		return nil, err
 	}
-	l.hash = LectureHash(h.get())
 
 	err = l.Init()
 	if err != nil {
@@ -707,7 +716,18 @@ func (t *Task) Validate(input DataMap, showResult bool) map[InputId]string {
 }
 
 func (t *Task) GetId() AbsTaskId {
-	return AbsTaskId{LHash: t.lHash, InnerId: InnerId{CId: t.cid, TId: t.tid}}
+	return AbsTaskId{LectureId: t.lid, TaskId: t.tid}
+}
+
+func (t *Task) createId() TaskId {
+	h := sha1.New()
+	h.Write([]byte(t.Name))
+	h.Write([]byte(t.Question))
+	for _, i := range t.Input {
+		h.Write([]byte(i.Id))
+		h.Write([]byte(i.Label))
+	}
+	return TaskId(fmt.Sprintf("%x", h.Sum(nil)))
 }
 
 type Expression struct {

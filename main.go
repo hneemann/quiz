@@ -57,13 +57,9 @@ func main() {
 	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte("test1234test1234"), sessions)
 
 	if !isOidc {
-		if *debug {
-			log.Println("start server without login")
-			loginTemp := server.Templates.Lookup("login.html")
-			mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
-		} else {
-			log.Fatal("no login method")
-		}
+		log.Println("start server without login")
+		loginTemp := server.Templates.Lookup("login.html")
+		mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
 	}
 
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}

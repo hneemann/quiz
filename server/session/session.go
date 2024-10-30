@@ -21,7 +21,7 @@ type Session struct {
 	mutex        sync.Mutex
 	time         time.Time
 	admin        bool
-	completed    map[data.LectureHash]map[data.InnerId]bool
+	completed    map[data.LectureId]map[data.TaskId]bool
 	persistToken string
 	dataModified bool
 }
@@ -44,18 +44,18 @@ func (s *Session) TaskCompleted(id data.AbsTaskId) {
 	defer s.mutex.Unlock()
 
 	if s.completed == nil {
-		s.completed = make(map[data.LectureHash]map[data.InnerId]bool)
+		s.completed = make(map[data.LectureId]map[data.TaskId]bool)
 	}
 
-	lmap, ok := s.completed[id.LHash]
+	lmap, ok := s.completed[id.LectureId]
 	if !ok {
-		lmap = make(map[data.InnerId]bool)
-		s.completed[id.LHash] = lmap
+		lmap = make(map[data.TaskId]bool)
+		s.completed[id.LectureId] = lmap
 	}
 
-	if !lmap[id.InnerId] {
+	if !lmap[id.TaskId] {
 		s.dataModified = true
-		lmap[id.InnerId] = true
+		lmap[id.TaskId] = true
 	}
 }
 
@@ -67,30 +67,29 @@ func (s *Session) IsTaskCompleted(id data.AbsTaskId) bool {
 	if s.completed == nil {
 		return false
 	}
-	tmap, ok := s.completed[id.LHash]
+	tmap, ok := s.completed[id.LectureId]
 	if !ok {
 		return false
 	}
-	_, ok = tmap[id.InnerId]
+	_, ok = tmap[id.TaskId]
 	return ok
 }
 
-// ChapterCompleted returns the number of tasks completed in a chapter.
-// The hash is the hash of the lecture and the cid is the chapter id.
-func (s *Session) ChapterCompleted(hash data.LectureHash, cid data.ChapterId) int {
+// TasksCompleted returns the number of tasks completed in a chapter.
+func (s *Session) TasksCompleted(chapter *data.Chapter) int {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	if s.completed == nil {
 		return 0
 	}
-	tmap, ok := s.completed[hash]
+	lmap, ok := s.completed[chapter.LID()]
 	if !ok {
 		return 0
 	}
 	count := 0
-	for i := range tmap {
-		if i.CId == cid {
+	for _, t := range chapter.Task {
+		if _, ok := lmap[t.TID()]; ok {
 			count++
 		}
 	}
@@ -136,7 +135,7 @@ func (s *Session) restore(path string) {
 		log.Println("error reading session data", err)
 		return
 	}
-	s.completed = make(map[data.LectureHash]map[data.InnerId]bool)
+	s.completed = make(map[data.LectureId]map[data.TaskId]bool)
 	err = serialize.New().Read(bytes.NewReader(fileData), &s.completed)
 	if err != nil {
 		log.Println("error unmarshal session data", err)
@@ -154,19 +153,17 @@ func (s *Session) cleanup(lectures *data.Lectures) {
 		return
 	}
 
-	for hash := range s.completed {
-		hashExists := false
-		for _, lecture := range lectures.List() {
-			if lecture.Hash() == hash {
-				hashExists = true
-				break
+	for _, lec := range lectures.List() {
+		if lmap, ok := s.completed[lec.LID()]; ok {
+			for tid := range lmap {
+				if !lec.HasTask(tid) {
+					delete(lmap, tid)
+					s.dataModified = true
+				}
 			}
 		}
-		if !hashExists {
-			s.dataModified = true
-			delete(s.completed, hash)
-		}
 	}
+
 }
 
 type Sessions struct {
@@ -229,14 +226,14 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 // This function also removes old session data.
 // All session files are reloaded from disc to avoid data races with
 // active sessions
-func (s *Sessions) Stats(hash data.LectureHash) ([]map[data.InnerId]bool, error) {
+func (s *Sessions) Stats(lid data.LectureId) ([]map[data.TaskId]bool, error) {
 	s.PersistAll()
 
 	list, err := os.ReadDir(s.dataFolder)
 	if err != nil {
 		return nil, err
 	}
-	var found []map[data.InnerId]bool
+	var found []map[data.TaskId]bool
 	for _, f := range list {
 		if !f.IsDir() {
 			filePath := filepath.Join(s.dataFolder, f.Name())
@@ -252,7 +249,7 @@ func (s *Sessions) Stats(hash data.LectureHash) ([]map[data.InnerId]bool, error)
 
 			se := &Session{}
 			se.restore(filePath)
-			if c, ok := se.completed[hash]; ok {
+			if c, ok := se.completed[lid]; ok {
 				found = append(found, c)
 			}
 		}

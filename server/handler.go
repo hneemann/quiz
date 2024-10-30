@@ -160,11 +160,18 @@ type lectureData struct {
 	session *session.Session
 }
 
-func (cd lectureData) Completed(hash data.LectureHash, cid data.ChapterId) int {
+// Completed returns the number of completed tasks in the given chapter
+func (cd lectureData) Completed(cid data.ChapterId) int {
 	if cd.session == nil {
 		return 0
 	}
-	return cd.session.ChapterCompleted(hash, cid)
+
+	ch, err := cd.Lecture.GetChapter(cid)
+	if err != nil {
+		return 0
+	}
+
+	return cd.session.TasksCompleted(ch)
 }
 
 func CreateLecture(lectures *data.Lectures) http.Handler {
@@ -197,6 +204,11 @@ func getLectureFromPath(p string) (data.LectureId, string) {
 	return data.LectureId(str), n
 }
 
+func getTaskFromPath(p string) (data.TaskId, string) {
+	str, n := getStrFromPath(p)
+	return data.TaskId(str), n
+}
+
 func getIntFromPath(p string) (int, string) {
 	str, n := getStrFromPath(p)
 	i, err := strconv.Atoi(str)
@@ -226,7 +238,7 @@ func (cd chapterData) IsAvail(id data.AbsTaskId) bool {
 }
 
 func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, session *session.Session) bool {
-	if state.ShowAllTasks || id.InnerId.TId == 0 || !c.StepByStep {
+	if state.ShowAllTasks || c.IsFirstTask(id.TaskId) || !c.StepByStep {
 		return true
 	}
 
@@ -239,8 +251,8 @@ func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, s
 	}
 
 	return session.IsTaskCompleted(data.AbsTaskId{
-		LHash:   id.LHash,
-		InnerId: data.InnerId{id.InnerId.CId, id.InnerId.TId - 1},
+		LectureId: id.LectureId,
+		TaskId:    c.GetTaskBefore(id.TaskId),
 	})
 }
 
@@ -254,7 +266,7 @@ func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Han
 			return
 		}
 
-		chapter, err := lecture.GetChapter(c)
+		chapter, err := lecture.GetChapter(data.ChapterId(c))
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
@@ -316,7 +328,7 @@ func (td *taskData) HasHook(id data.InputId) bool {
 
 func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t, next := getIntFromPath(r.URL.Path)
+		t, next := getTaskFromPath(r.URL.Path)
 		c, next := getIntFromPath(next)
 		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
@@ -335,7 +347,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			}
 		}
 
-		chapter, err := lecture.GetChapter(c)
+		chapter, err := lecture.GetChapter(data.ChapterId(c))
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
@@ -390,8 +402,11 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			}
 			td.HasResult = true
 		}
-		if chapter.IsMoreBehind(task.TID()) && (ses != nil && ses.IsTaskCompleted(task.GetId())) {
-			td.Next = fmt.Sprintf("/task/%s/%d/%d/", task.LID(), task.CID(), task.TID()+1)
+
+		if ses != nil && ses.IsTaskCompleted(task.GetId()) {
+			if ntid, ok := chapter.IsTaskBehind(task.TID()); ok {
+				td.Next = fmt.Sprintf("/task/%s/%d/%s/", task.LID(), chapter.CID(), ntid)
+			}
 		}
 
 		err = taskTemp.Execute(w, &td)
@@ -495,7 +510,7 @@ func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.
 			return
 		}
 
-		statsMap, err := sessions.Stats(lecture.Hash())
+		statsMap, err := sessions.Stats(lecture.LID())
 		if err != nil {
 			http.Error(w, "error collecting data", http.StatusInternalServerError)
 			return
@@ -507,7 +522,7 @@ func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.
 			for _, t := range c.Task {
 				counter := 0
 				for _, s := range statsMap {
-					if comp, ok := s[t.GetId().InnerId]; ok {
+					if comp, ok := s[t.TID()]; ok {
 						if comp {
 							counter++
 						}
