@@ -48,12 +48,12 @@
   <p style="color:red">{{.ReloadError}}</p>
   {{end}}
   <p style="margin-top:2em;">
-  <a class="nav" href="/chapter/{{.Task.LID}}/{{.Task.CID}}">Aufgaben</a>
+  <a class="nav" href="/chapter/{{.Task.LID}}/{{.Task.GetChapterNum}}">Aufgaben</a>
   {{if .Next}}
   <a class="nav" href="{{.Next}}">Weiter</a>
   {{end}}
   {{if .ShowReload}}
-  <a class="nav" href="/task/{{.Task.LID}}/{{.Task.CID}}/{{.Task.TID}}/?rl=true">Reload</a>
+  <a class="nav" href="/task/{{.Task.LID}}/{{.Task.TID}}/?rl=true">Reload</a>
   {{end}}
   </p>
 </div>

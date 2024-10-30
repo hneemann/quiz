@@ -16,7 +16,7 @@
   <h3>Aufgaben</h3>
   {{range .Chapter.Task}}
      {{$avail:=$.IsAvail .GetId}}
-     {{if $avail}}<a href="/task/{{.LID}}/{{$.Chapter.CID}}/{{.TID}}/">{{end}}
+     {{if $avail}}<a href="/task/{{.LID}}/{{.TID}}/">{{end}}
          <div class="task" {{if not $avail}}style="color:gray"{{end}}>
              {{.Name}}
              {{if $.Completed .GetId}}

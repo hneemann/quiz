@@ -161,12 +161,12 @@ type lectureData struct {
 }
 
 // Completed returns the number of completed tasks in the given chapter
-func (cd lectureData) Completed(cid data.ChapterId) int {
+func (cd lectureData) Completed(cnum int) int {
 	if cd.session == nil {
 		return 0
 	}
 
-	ch, err := cd.Lecture.GetChapter(cid)
+	ch, err := cd.Lecture.GetChapter(cnum)
 	if err != nil {
 		return 0
 	}
@@ -238,7 +238,12 @@ func (cd chapterData) IsAvail(id data.AbsTaskId) bool {
 }
 
 func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, session *session.Session) bool {
-	if state.ShowAllTasks || c.IsFirstTask(id.TaskId) || !c.StepByStep {
+	before, ok := c.GetPrevTaskId(id.TaskId)
+	if !ok {
+		return true
+	}
+
+	if state.ShowAllTasks || !c.StepByStep {
 		return true
 	}
 
@@ -250,10 +255,7 @@ func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, s
 		return true
 	}
 
-	return session.IsTaskCompleted(data.AbsTaskId{
-		LectureId: id.LectureId,
-		TaskId:    c.GetTaskBefore(id.TaskId),
-	})
+	return session.IsTaskCompleted(data.AbsTaskId{LectureId: id.LectureId, TaskId: before})
 }
 
 func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Handler {
@@ -266,7 +268,7 @@ func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Han
 			return
 		}
 
-		chapter, err := lecture.GetChapter(data.ChapterId(c))
+		chapter, err := lecture.GetChapter(c)
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
@@ -329,7 +331,6 @@ func (td *taskData) HasHook(id data.InputId) bool {
 func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t, next := getTaskFromPath(r.URL.Path)
-		c, next := getIntFromPath(next)
 		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
@@ -347,9 +348,9 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			}
 		}
 
-		chapter, err := lecture.GetChapter(data.ChapterId(c))
+		chapter, err := lecture.GetChapterOfTask(t)
 		if err != nil {
-			http.Error(w, "invalid chapter number", http.StatusBadRequest)
+			http.Error(w, "chapter not found", http.StatusBadRequest)
 			return
 		}
 
@@ -404,8 +405,8 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 		}
 
 		if ses != nil && ses.IsTaskCompleted(task.GetId()) {
-			if ntid, ok := chapter.IsTaskBehind(task.TID()); ok {
-				td.Next = fmt.Sprintf("/task/%s/%d/%s/", task.LID(), chapter.CID(), ntid)
+			if ntid, ok := chapter.GetNextTaskId(task.TID()); ok {
+				td.Next = fmt.Sprintf("/task/%s/%s/", task.LID(), ntid)
 			}
 		}
 

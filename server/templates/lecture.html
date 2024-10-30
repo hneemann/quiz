@@ -11,13 +11,13 @@
   <h2>{{.Lecture.Title}}</h2>
   {{markdown .Lecture.Description .Lecture.LID}}
   <p style="font-size:80%;text-align:right;margin-bottom:-0.5em">{{.Lecture.Author}} ({{.Lecture.AuthorEMail}})</p>
-  {{range .Lecture.Chapter}}
+  {{range $n,$ch:=.Lecture.Chapter}}
     <div class="chapter">
-      <a href="/chapter/{{.LID}}/{{.CID}}">
+      <a href="/chapter/{{.LID}}/{{$n}}">
       <h2>{{.Title}}</h2>
       {{markdown .Description .LID}}
-      {{$c := $.Completed .CID}}
-      {{$a := $.Lecture.TasksInChapter .CID}}
+      {{$c := $.Completed $n}}
+      {{$a := $.Lecture.TasksInChapter $n}}
       <div class="progress">
         {{if eq $c $a}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{$a}}{{end}}
       </div>
