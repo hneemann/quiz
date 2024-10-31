@@ -161,7 +161,7 @@ type lectureData struct {
 }
 
 // Completed returns the number of completed tasks in the given chapter
-func (cd lectureData) Completed(cnum int) int {
+func (cd lectureData) Completed(cnum data.ChapterNum) int {
 	if cd.session == nil {
 		return 0
 	}
@@ -204,11 +204,6 @@ func getLectureFromPath(p string) (data.LectureId, string) {
 	return data.LectureId(str), n
 }
 
-func getTaskFromPath(p string) (data.TaskId, string) {
-	str, n := getStrFromPath(p)
-	return data.TaskId(str), n
-}
-
 func getIntFromPath(p string) (int, string) {
 	str, n := getStrFromPath(p)
 	i, err := strconv.Atoi(str)
@@ -216,6 +211,16 @@ func getIntFromPath(p string) (int, string) {
 		return -1, n
 	}
 	return i, n
+}
+
+func getTaskNumFromPath(p string) (data.TaskNum, string) {
+	i, n := getIntFromPath(p)
+	return data.TaskNum(i), n
+}
+
+func getChapterNumFromPath(p string) (data.ChapterNum, string) {
+	i, n := getIntFromPath(p)
+	return data.ChapterNum(i), n
 }
 
 var chapterTemp = Templates.Lookup("chapter.html")
@@ -226,24 +231,34 @@ type chapterData struct {
 	state   data.LectureState
 }
 
-func (cd chapterData) Completed(id data.AbsTaskId) bool {
+func (cd chapterData) Completed(num data.TaskNum) bool {
 	if cd.session == nil {
 		return false
 	}
-	return cd.session.IsTaskCompleted(id)
+	task, err := cd.Chapter.GetTask(num)
+	if err != nil {
+		return false
+	}
+	return cd.session.IsTaskCompleted(task)
 }
 
-func (cd chapterData) IsAvail(id data.AbsTaskId) bool {
-	return IsTaskAvail(id, cd.Chapter, &cd.state, cd.session)
+func (cd chapterData) IsAvail(num data.TaskNum) bool {
+	if cd.session == nil {
+		return false
+	}
+	task, err := cd.Chapter.GetTask(num)
+	if err != nil {
+		return false
+	}
+	return IsTaskAvail(task, &cd.state, cd.session)
 }
 
-func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, session *session.Session) bool {
-	before, ok := c.GetPrevTaskId(id.TaskId)
-	if !ok {
+func IsTaskAvail(task *data.Task, state *data.LectureState, session *session.Session) bool {
+	if task.Num() == 0 {
 		return true
 	}
 
-	if state.ShowAllTasks || !c.StepByStep {
+	if state.ShowAllTasks || !task.Chapter().StepByStep {
 		return true
 	}
 
@@ -255,12 +270,13 @@ func IsTaskAvail(id data.AbsTaskId, c *data.Chapter, state *data.LectureState, s
 		return true
 	}
 
-	return session.IsTaskCompleted(data.AbsTaskId{LectureId: id.LectureId, TaskId: before})
+	beforeTask, _ := task.Chapter().GetTask(task.Num() - 1)
+	return session.IsTaskCompleted(beforeTask)
 }
 
 func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, next := getIntFromPath(r.URL.Path)
+		cn, next := getChapterNumFromPath(r.URL.Path)
 		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
@@ -268,7 +284,7 @@ func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Han
 			return
 		}
 
-		chapter, err := lecture.GetChapter(c)
+		chapter, err := lecture.GetChapter(cn)
 		if err != nil {
 			http.Error(w, "invalid chapter number", http.StatusBadRequest)
 			return
@@ -286,11 +302,9 @@ func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Han
 var taskTemp = Templates.Lookup("task.html")
 
 type taskData struct {
+	Task                *data.Task
 	HasResult           bool
 	ShowSolutionsButton bool
-	Task                *data.Task
-	ChapterNum          int
-	TaskNum             int
 	Answers             data.DataMap
 	Result              map[data.InputId]string
 	Next                string
@@ -332,7 +346,8 @@ func (td *taskData) HasHook(id data.InputId) bool {
 
 func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t, next := getTaskFromPath(r.URL.Path)
+		tn, next := getTaskNumFromPath(r.URL.Path)
+		cn, next := getChapterNumFromPath(next)
 		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
@@ -347,17 +362,11 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			var nl *data.Lecture
 			nl, reloadError = lectures.Reload(lecture.Id)
 			if nl != nil {
-				cn := toInt(query.Get("cn"))
-				tn := toInt(query.Get("tn"))
-				ti, err := nl.GetTaskInfoByNum(cn, tn)
-				if err == nil {
-					http.Redirect(w, r, fmt.Sprintf("/task/%s/%s/", nl.Id, ti.Task.TID()), http.StatusFound)
-					return
-				}
+				lecture = nl
 			}
 		}
 
-		ti, err := lecture.GetTaskInfo(t)
+		task, err := lecture.GetTask(cn, tn)
 		if err != nil {
 			http.Error(w, "task not found", http.StatusBadRequest)
 			return
@@ -371,16 +380,14 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			showSolutions = showSolutions || ses.IsAdmin()
 			showReload = ses.IsAdmin() && lecture.CanReload()
 
-			if !IsTaskAvail(ti.Task.GetId(), ti.Chapter, &state, ses) {
+			if !IsTaskAvail(task, &state, ses) {
 				http.Error(w, "task not available", http.StatusForbidden)
 				return
 			}
 		}
 
 		td := taskData{
-			Task:                ti.Task,
-			ChapterNum:          ti.ChapterNum,
-			TaskNum:             ti.TaskNum,
+			Task:                task,
 			Answers:             data.DataMap{},
 			ShowSolutionsButton: showSolutions,
 			ShowReload:          showReload,
@@ -393,7 +400,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 				http.Error(w, "error parsing form", http.StatusBadRequest)
 				return
 			}
-			for _, i := range ti.Task.Input {
+			for _, i := range task.Input {
 				a := r.Form.Get("input_" + string(i.Id))
 				switch i.Type {
 				case data.Checkbox:
@@ -403,11 +410,11 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 				}
 			}
 			showResult := showSolutions && r.Form.Get("showResult") != ""
-			td.Result = ti.Task.Validate(td.Answers, showResult)
+			td.Result = task.Validate(td.Answers, showResult)
 			if len(td.Result) == 0 {
 
 				if ses != nil {
-					ses.TaskCompleted(ti.Task.GetId())
+					ses.TaskCompleted(task)
 				}
 
 				td.Ok = true
@@ -415,9 +422,9 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			td.HasResult = true
 		}
 
-		if ses != nil && ses.IsTaskCompleted(ti.Task.GetId()) {
-			if ntid, ok := ti.Chapter.GetNextTaskId(ti.Task.TID()); ok {
-				td.Next = fmt.Sprintf("/task/%s/%s/", lecture.Id, ntid)
+		if ses != nil && ses.IsTaskCompleted(task) {
+			if nTask, err := task.Chapter().GetTask(tn + 1); err == nil {
+				td.Next = fmt.Sprintf("/task/%s/%d/%d/", lecture.Id, cn, nTask.Num())
 			}
 		}
 
@@ -426,17 +433,6 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			log.Println(err)
 		}
 	})
-}
-
-func toInt(s string) int {
-	if s == "" {
-		return -1
-	}
-	n, err := strconv.Atoi(s)
-	if err != nil {
-		return -1
-	}
-	return n
 }
 
 func CreateImages(lectures *data.Lectures) http.Handler {

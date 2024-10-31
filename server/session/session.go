@@ -39,7 +39,7 @@ func (s *Session) IsAdmin() bool {
 }
 
 // TaskCompleted marks a task as completed.
-func (s *Session) TaskCompleted(id data.AbsTaskId) {
+func (s *Session) TaskCompleted(task *data.Task) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -47,31 +47,32 @@ func (s *Session) TaskCompleted(id data.AbsTaskId) {
 		s.completed = make(map[data.LectureId]map[data.TaskId]bool)
 	}
 
-	lmap, ok := s.completed[id.LectureId]
+	lectureId := task.Chapter().Lecture().Id
+	lmap, ok := s.completed[lectureId]
 	if !ok {
 		lmap = make(map[data.TaskId]bool)
-		s.completed[id.LectureId] = lmap
+		s.completed[lectureId] = lmap
 	}
 
-	if !lmap[id.TaskId] {
+	if !lmap[task.TID()] {
 		s.dataModified = true
-		lmap[id.TaskId] = true
+		lmap[task.TID()] = true
 	}
 }
 
 // IsTaskCompleted returns true if the task is completed.
-func (s *Session) IsTaskCompleted(id data.AbsTaskId) bool {
+func (s *Session) IsTaskCompleted(task *data.Task) bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	if s.completed == nil {
 		return false
 	}
-	tmap, ok := s.completed[id.LectureId]
+	tmap, ok := s.completed[task.Chapter().Lecture().Id]
 	if !ok {
 		return false
 	}
-	_, ok = tmap[id.TaskId]
+	_, ok = tmap[task.TID()]
 	return ok
 }
 
@@ -83,7 +84,7 @@ func (s *Session) TasksCompleted(chapter *data.Chapter) int {
 	if s.completed == nil {
 		return 0
 	}
-	lmap, ok := s.completed[chapter.LID()]
+	lmap, ok := s.completed[chapter.Lecture().Id]
 	if !ok {
 		return 0
 	}

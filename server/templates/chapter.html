@@ -11,22 +11,22 @@
   <div class="main">
 
   <h2>{{.Chapter.Title}}</h2>
-  {{markdown .Chapter.Description .Chapter.LID}}
+  {{markdown .Chapter.Description .Chapter.Lecture.Id}}
 
   <h3>Aufgaben</h3>
   {{range .Chapter.Task}}
-     {{$avail:=$.IsAvail .GetId}}
-     {{if $avail}}<a href="/task/{{.LID}}/{{.TID}}/">{{end}}
+     {{$avail:=$.IsAvail .Num}}
+     {{if $avail}}<a href="/task/{{$.Chapter.Lecture.Id}}/{{$.Chapter.Num}}/{{.Num}}/">{{end}}
          <div class="task" {{if not $avail}}style="color:gray"{{end}}>
              {{.Name}}
-             {{if $.Completed .GetId}}
+             {{if $.Completed .Num}}
                  <img class="icon" src="/assets/completed.svg" />
              {{end}}
          </div>
      {{if $avail}}</a>{{end}}
   {{end}}
 
- <a class="nav" href="/lecture/{{.Chapter.LID}}">Zurück</a>
+ <a class="nav" href="/lecture/{{.Chapter.Lecture.Id}}">Kapitelübersicht</a>
 </div>
 </body>
 </html>

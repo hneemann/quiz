@@ -283,7 +283,13 @@ func (v *Validator) ToResultMap(m value.Map, id InputId, result map[InputId]stri
 	}
 }
 
-type InputId string
+type (
+	TaskId     string
+	InputId    string
+	LectureId  string
+	ChapterNum int
+	TaskNum    int
+)
 
 type Input struct {
 	Id        InputId `xml:"id,attr"`
@@ -293,7 +299,8 @@ type Input struct {
 }
 
 type Task struct {
-	lecture           *Lecture
+	chapter           *Chapter
+	num               TaskNum
 	tid               TaskId
 	inputHasValidator map[InputId]bool
 	Name              string
@@ -302,17 +309,12 @@ type Task struct {
 	Validator         *Validator
 }
 
-type (
-	TaskId string
-)
-
-type AbsTaskId struct {
-	LectureId LectureId
-	TaskId    TaskId
+func (t *Task) Chapter() *Chapter {
+	return t.chapter
 }
 
-func (t *Task) LID() LectureId {
-	return t.lecture.Id
+func (t *Task) Num() TaskNum {
+	return t.num
 }
 
 func (t *Task) TID() TaskId {
@@ -327,70 +329,42 @@ func (t *Task) InputHasValidator(id InputId) bool {
 }
 
 type Chapter struct {
+	lecture     *Lecture
+	num         ChapterNum
 	StepByStep  bool `xml:"stepByStep,attr"`
-	lid         LectureId
 	Title       string
 	Description string
 	Task        []*Task
 }
 
-func (c *Chapter) LID() LectureId {
-	return c.lid
+func (c *Chapter) Lecture() *Lecture {
+	return c.lecture
 }
 
-func (c *Chapter) GetTask(tid TaskId) (*Task, error) {
-	for _, task := range c.Task {
-		if task.TID() == tid {
-			return task, nil
-		}
+func (c *Chapter) Num() ChapterNum {
+	return c.num
+}
+
+func (c *Chapter) Tasks() int {
+	return len(c.Task)
+}
+
+func (c *Chapter) GetTask(tid TaskNum) (*Task, error) {
+	if tid < 0 || int(tid) >= len(c.Task) {
+		return nil, fmt.Errorf("task %d not found", tid)
 	}
-	return nil, fmt.Errorf("task %s not found", tid)
-}
-
-func (c *Chapter) GetNextTaskId(tid TaskId) (TaskId, bool) {
-	lastIndex := len(c.Task) - 1
-	for i, task := range c.Task {
-		if task.TID() == tid {
-			if i == lastIndex {
-				return "", false
-			}
-			return c.Task[i+1].TID(), true
-		}
-	}
-	return "", false
-}
-
-func (c *Chapter) GetPrevTaskId(id TaskId) (TaskId, bool) {
-	for i, task := range c.Task {
-		if task.TID() == id {
-			if i == 0 {
-				return "", false
-			}
-			return c.Task[i-1].TID(), true
-		}
-	}
-	return "", false
-}
-
-type LectureId string
-
-type TaskInfo struct {
-	ChapterNum int
-	Chapter    *Chapter
-	TaskNum    int
-	Task       *Task
+	return c.Task[tid], nil
 }
 
 type Lecture struct {
-	Id             LectureId `xml:"id,attr"`
-	Title          string
-	Author         string
-	AuthorEMail    string
-	Description    string
-	Chapter        []*Chapter
-	availableTasks map[TaskId]TaskInfo
-	folder         string
-	files          map[string][]byte
+	Id          LectureId `xml:"id,attr"`
+	Title       string
+	Author      string
+	AuthorEMail string
+	Description string
+	Chapter     []*Chapter
+	folder      string
+	files       map[string][]byte
 }
 
 func (l *Lecture) LID() LectureId {
@@ -419,18 +393,18 @@ func (l *Lecture) Init() error {
 	}
 
 	l.Description = cleanUpMarkdown(l.Description)
-	l.availableTasks = make(map[TaskId]TaskInfo)
+
 	for cnum, chapter := range l.Chapter {
 		if chapter.Title == "" {
 			return fmt.Errorf("no title in chapter %d", cnum)
 		}
-		chapter.lid = l.Id
+		chapter.lecture = l
+		chapter.num = ChapterNum(cnum)
 		chapter.Description = cleanUpMarkdown(chapter.Description)
 		for tNum, task := range chapter.Task {
-			task.tid = task.createId()
+			task.chapter = chapter
+			task.num = TaskNum(tNum)
 			task.Question = cleanUpMarkdown(task.Question)
-			l.availableTasks[task.tid] = TaskInfo{ChapterNum: cnum, Chapter: chapter, TaskNum: tNum, Task: task}
-			task.lecture = l
 
 			if task.Name == "" {
 				task.Name = fmt.Sprintf("Aufgabe %d", tNum+1)
@@ -494,6 +468,7 @@ func (l *Lecture) Init() error {
 				}
 			}
 
+			task.tid = task.createId()
 		}
 	}
 	return nil
@@ -552,19 +527,19 @@ func isIdent(id InputId) bool {
 	return true
 }
 
-func (l *Lecture) GetTaskInfo(t TaskId) (TaskInfo, error) {
-	if c, ok := l.availableTasks[t]; !ok {
-		return TaskInfo{}, fmt.Errorf("task %s not found", t)
-	} else {
-		return c, nil
-	}
-}
-
-func (l *Lecture) GetChapter(num int) (*Chapter, error) {
-	if num < 0 || num >= len(l.Chapter) {
+func (l *Lecture) GetChapter(num ChapterNum) (*Chapter, error) {
+	if num < 0 || int(num) >= len(l.Chapter) {
 		return nil, fmt.Errorf("chapter %d not found", num)
 	}
 	return l.Chapter[num], nil
+}
+
+func (l *Lecture) GetTask(ch ChapterNum, tn TaskNum) (*Task, error) {
+	chapter, err := l.GetChapter(ch)
+	if err != nil {
+		return nil, err
+	}
+	return chapter.GetTask(tn)
 }
 
 func (l *Lecture) TasksInChapter(cnum int) int {
@@ -579,20 +554,14 @@ func (l *Lecture) CanReload() bool {
 }
 
 func (l *Lecture) HasTask(tid TaskId) bool {
-	if _, ok := l.availableTasks[tid]; ok {
-		return true
+	for _, c := range l.Chapter {
+		for _, t := range c.Task {
+			if t.tid == tid {
+				return true
+			}
+		}
 	}
 	return false
-}
-
-func (l *Lecture) GetTaskInfoByNum(cn int, tn int) (TaskInfo, error) {
-	if cn < 0 || cn >= len(l.Chapter) {
-		return TaskInfo{}, fmt.Errorf("chapter %d not found", cn)
-	}
-	if tn < 0 || tn >= len(l.Chapter[cn].Task) {
-		return TaskInfo{}, fmt.Errorf("task %d not found", tn)
-	}
-	return l.availableTasks[l.Chapter[cn].Task[tn].tid], nil
 }
 
 type Lectures struct {
@@ -753,10 +722,6 @@ func (t *Task) Validate(input DataMap, showResult bool) map[InputId]string {
 	}
 
 	return result
-}
-
-func (t *Task) GetId() AbsTaskId {
-	return AbsTaskId{LectureId: t.lecture.Id, TaskId: t.tid}
 }
 
 func (t *Task) createId() TaskId {

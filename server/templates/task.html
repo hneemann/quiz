@@ -9,30 +9,30 @@
 <body {{if .HasResult}}onload="document.getElementById('submit').scrollIntoView();"{{end}}>
   <div class="main">
   <h2>{{.Task.Name}}</h2>
-  {{markdown .Task.Question .Task.LID}}
+  {{markdown .Task.Question .Task.Chapter.Lecture.Id}}
 
   <form action="." method="post">
     <table>
     {{range .Task.Input}}
       <tr>
         {{if .Type }}
-          <td class="result-c1"><label for="input_{{.Id}}">{{markdown .Label $.Task.LID}}</label></td>
+          <td class="result-c1"><label for="input_{{.Id}}">{{markdown .Label $.Task.Chapter.Lecture.Id}}</label></td>
           <td class="result-c2"><input type="text" name="input_{{.Id}}" id="input_{{.Id}}" value="{{$.GetAnswer .Id}}"></td>
         {{else}}
           <td class="result-c1c"><input type="checkbox" name="input_{{.Id}}" id="input_{{.Id}}" {{if $.GetAnswer .Id}}checked{{end}}></td>
-          <td class="result-c2c"><label for="input_{{.Id}}">{{markdown .Label $.Task.LID}}</label></td>
+          <td class="result-c2c"><label for="input_{{.Id}}">{{markdown .Label $.Task.Chapter.Lecture.Id}}</label></td>
         {{end}}
         {{if $.HasHook .Id}}
            <td><img class="progressIcon" src="/assets/completed.svg" /></td>
         {{end}}
       </tr>
         {{if $.GetResult .Id}}
-        <tr class="result"><td></td><td class="result"><div class="result">{{markdown ($.GetResult .Id) $.Task.LID}}</div></td></tr>
+        <tr class="result"><td></td><td class="result"><div class="result">{{markdown ($.GetResult .Id) $.Task.Chapter.Lecture.Id}}</div></td></tr>
         {{end}}
     {{end}}
     </table>
     {{if .GetResult "_task_"}}
-    <div class="result">{{markdown (.GetResult "_task_") .Task.LID}}</div>
+    <div class="result">{{markdown (.GetResult "_task_") .Task.Chapter.Lecture.Id}}</div>
     {{end}}
     {{if .Ok}}
     <div class="correct">Richtig!</div>
@@ -48,12 +48,12 @@
   <p style="color:red">{{.ReloadError}}</p>
   {{end}}
   <p style="margin-top:2em;">
-  <a class="nav" href="/chapter/{{.Task.LID}}/{{.ChapterNum}}">Aufgaben</a>
+  <a class="nav" href="/chapter/{{.Task.Chapter.Lecture.Id}}/{{.Task.Chapter.Num}}">Aufgabenübersicht</a>
   {{if .Next}}
   <a class="nav" href="{{.Next}}">Weiter</a>
   {{end}}
   {{if .ShowReload}}
-  <a class="nav" href="/task/{{.Task.LID}}/{{.Task.TID}}/?rl=true&tn={{.TaskNum}}&cn={{.ChapterNum}}">Reload</a>
+  <a class="nav" href="/task/{{.Task.Chapter.Lecture.Id}}/{{.Task.Chapter.Num}}/{{.Task.Num}}/?rl=true">Reload</a>
   {{end}}
   </p>
 </div>
