@@ -179,8 +179,7 @@ func CreateLecture(lectures *data.Lectures) http.Handler {
 		lectureId, _ := getLectureFromPath(r.URL.Path)
 		lecture, err := lectures.GetLecture(lectureId)
 		if err != nil {
-			http.Error(w, "invalid lecture number", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 
 		ses, _ := r.Context().Value(session.Key).(*session.Session)
@@ -280,14 +279,12 @@ func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Han
 		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
-			http.Error(w, "invalid lecture number", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 
 		chapter, err := lecture.GetChapter(cn)
 		if err != nil {
-			http.Error(w, "invalid chapter number", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 
 		ses, _ := r.Context().Value(session.Key).(*session.Session)
@@ -351,8 +348,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 		l, _ := getLectureFromPath(next)
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
-			http.Error(w, "invalid lecture number", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 
 		var reloadError error
@@ -368,8 +364,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 
 		task, err := lecture.GetTask(cn, tn)
 		if err != nil {
-			http.Error(w, "task not found", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 
 		state := states.Get(lecture.Id)
@@ -381,8 +376,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 			showReload = ses.IsAdmin() && lecture.CanReload()
 
 			if !IsTaskAvail(task, &state, ses) {
-				http.Error(w, "task not available", http.StatusForbidden)
-				return
+				panic("task not available")
 			}
 		}
 
@@ -397,8 +391,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 		if r.Method == http.MethodPost {
 			err = r.ParseForm()
 			if err != nil {
-				http.Error(w, "error parsing form", http.StatusBadRequest)
-				return
+				panic(err)
 			}
 			for _, i := range task.Input {
 				a := r.Form.Get("input_" + string(i.Id))
@@ -442,13 +435,11 @@ func CreateImages(lectures *data.Lectures) http.Handler {
 
 		lecture, err := lectures.GetLecture(l)
 		if err != nil {
-			http.Error(w, "invalid lecture number", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 		data, err := lecture.GetFile(file)
 		if err != nil {
-			http.Error(w, "not found", http.StatusNotFound)
-			return
+			panic(err)
 		}
 
 		ctype := mime.TypeByExtension(filepath.Ext(file))
@@ -466,26 +457,22 @@ func CreateAdmin(lectures *data.Lectures) http.Handler {
 		if r.Method == http.MethodPost {
 			err := r.ParseMultipartForm(32 << 20)
 			if err != nil {
-				respondWithError(w, err)
-				return
+				panic(err)
 			}
 
 			file, _, err := r.FormFile("file")
 			if err != nil {
-				respondWithError(w, err)
-				return
+				panic(err)
 			}
 			zip, err := io.ReadAll(file)
 			file.Close()
 			if err != nil {
-				respondWithError(w, err)
-				return
+				panic(err)
 			}
 
 			err = lectures.Uploaded(zip)
 			if err != nil {
-				respondWithError(w, err)
-				return
+				panic(err)
 			}
 		}
 		err := adminTemp.Execute(w, lectures)
@@ -493,16 +480,6 @@ func CreateAdmin(lectures *data.Lectures) http.Handler {
 			log.Println(err)
 		}
 	})
-}
-
-var errorViewTemp = Templates.Lookup("error.html")
-
-func respondWithError(writer http.ResponseWriter, e error) {
-	log.Println(e)
-	err := errorViewTemp.Execute(writer, e)
-	if err != nil {
-		log.Println(err)
-	}
 }
 
 var statsViewTemp = Templates.Lookup("statistics.html")
@@ -525,14 +502,12 @@ func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.
 		id := data.LectureId(r.URL.Query().Get("id"))
 		lecture, err := lectures.GetLecture(id)
 		if err != nil {
-			http.Redirect(w, r, "/admin", http.StatusFound)
-			return
+			panic(err)
 		}
 
 		statsMap, err := sessions.Stats(lecture.LID())
 		if err != nil {
-			http.Error(w, "error collecting data", http.StatusInternalServerError)
-			return
+			panic(err)
 		}
 
 		stats := StatsData{Title: lecture.Title}
@@ -571,8 +546,7 @@ func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Ha
 		id, _ := getLectureFromPath(r.URL.Path)
 		lecture, err := lectures.GetLecture(id)
 		if err != nil {
-			http.Error(w, "invalid lecture number", http.StatusBadRequest)
-			return
+			panic(err)
 		}
 
 		settings := states.Get(id)
@@ -580,8 +554,7 @@ func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Ha
 		if r.Method == http.MethodPost {
 			err := r.ParseForm()
 			if err != nil {
-				respondWithError(w, err)
-				return
+				panic(err)
 			}
 
 			settings.ShowSolutions = r.Form.Get("showSolutions") == "true"
@@ -589,8 +562,7 @@ func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Ha
 
 			err = states.SetState(id, settings)
 			if err != nil {
-				respondWithError(w, err)
-				return
+				panic(err)
 			}
 		}
 

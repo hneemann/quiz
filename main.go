@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"github.com/hneemann/quiz/data"
 	"github.com/hneemann/quiz/server"
 	"github.com/hneemann/quiz/server/myOidc"
@@ -15,6 +16,23 @@ import (
 	"path/filepath"
 	"strconv"
 )
+
+var errorTemp = server.Templates.Lookup("error.html")
+
+func CatchPanic(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println(r)
+				err := errorTemp.Execute(writer, fmt.Sprintf("%v", r))
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}()
+		h.ServeHTTP(writer, request)
+	})
+}
 
 func Authenticate(user, pass string) (string, bool, error) {
 	if user == "admin" && pass == "admin" {
@@ -43,16 +61,16 @@ func main() {
 	states := data.NewLectureStates(filepath.Join(*dataFolder, "state"))
 
 	mux := http.NewServeMux()
-	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug))
+	mux.Handle("/assets/", CatchPanic(Cache(http.FileServer(http.FS(server.Assets)), 60*8, *debug)))
 	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures)))
-	mux.Handle("/lecture/", sessions.Wrap(server.CreateLecture(lectures)))
-	mux.Handle("/chapter/", sessions.Wrap(server.CreateChapter(lectures, states)))
-	mux.Handle("/task/", sessions.Wrap(server.CreateTask(lectures, states)))
-	mux.Handle("/admin/", sessions.WrapAdmin(server.CreateAdmin(lectures)))
-	mux.Handle("/statistics/", sessions.WrapAdmin(server.CreateStatistics(lectures, sessions)))
-	mux.Handle("/settings/", sessions.WrapAdmin(server.CreateSettings(lectures, states)))
-	mux.Handle("/image/", Cache(server.CreateImages(lectures), 60, *debug))
-	mux.Handle("/logout", sessions.Wrap(session.LogoutHandler(sessions)))
+	mux.Handle("/lecture/", sessions.Wrap(CatchPanic(server.CreateLecture(lectures))))
+	mux.Handle("/chapter/", sessions.Wrap(CatchPanic(server.CreateChapter(lectures, states))))
+	mux.Handle("/task/", sessions.Wrap(CatchPanic(server.CreateTask(lectures, states))))
+	mux.Handle("/admin/", sessions.WrapAdmin(CatchPanic(server.CreateAdmin(lectures))))
+	mux.Handle("/statistics/", sessions.WrapAdmin(CatchPanic(server.CreateStatistics(lectures, sessions))))
+	mux.Handle("/settings/", sessions.WrapAdmin(CatchPanic(server.CreateSettings(lectures, states))))
+	mux.Handle("/image/", CatchPanic(Cache(server.CreateImages(lectures), 60, *debug)))
+	mux.Handle("/logout", session.LogoutHandler(sessions))
 
 	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte("test1234test1234"), sessions)
 

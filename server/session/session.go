@@ -355,7 +355,6 @@ func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 			c := context.WithValue(r.Context(), Key, ses)
 			parent.ServeHTTP(w, r.WithContext(c))
 		} else {
-			log.Println("redirect to login:", r.URL.Path)
 			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
 			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
 		}
@@ -371,7 +370,6 @@ func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 			c := context.WithValue(r.Context(), Key, ses)
 			parent.ServeHTTP(w, r.WithContext(c))
 		} else {
-			log.Println("redirect to login:", r.URL.Path)
 			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
 			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
 		}
@@ -421,7 +419,6 @@ func LoginHandler(sessions *Sessions, loginTemp *template.Template, auth Authent
 					url = string(t)
 				}
 
-				log.Println("redirect to", url)
 				http.Redirect(w, r, url, http.StatusFound)
 				return
 			}
