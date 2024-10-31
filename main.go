@@ -19,6 +19,7 @@ import (
 
 var errorTemp = server.Templates.Lookup("error.html")
 
+// CatchPanic is a middleware that catches panics and displays them in a nicer way
 func CatchPanic(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		defer func() {
@@ -72,7 +73,7 @@ func main() {
 	mux.Handle("/image/", CatchPanic(Cache(server.CreateImages(lectures), 60, *debug)))
 	mux.Handle("/logout", session.LogoutHandler(sessions))
 
-	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte("test1234test1234"), sessions)
+	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte(session.CreateRandomString(16)), sessions)
 
 	if !isOidc {
 		log.Println("start server without login")

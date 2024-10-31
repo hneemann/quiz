@@ -308,7 +308,7 @@ func (s *Sessions) Create(persistToken string, admin bool, w http.ResponseWriter
 		}
 	}
 
-	sessionToken := createRandomString()
+	sessionToken := CreateRandomString(30)
 	session := &Session{persistToken: persistToken, admin: admin}
 	session.restore(path.Join(s.dataFolder, session.persistToken))
 	session.cleanup(s.lectures)
@@ -337,8 +337,8 @@ func (s *Sessions) PersistAll() {
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-func createRandomString() string {
-	b := make([]byte, 30)
+func CreateRandomString(size int) string {
+	b := make([]byte, size)
 	for i := range b {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}

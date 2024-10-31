@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -191,9 +190,9 @@
      borderopacity="0.21568627"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1"
-     inkscape:cx="-134.9567"
-     inkscape:cy="20.463852"
+     inkscape:zoom="12.583333"
+     inkscape:cx="24"
+     inkscape:cy="24"
      inkscape:current-layer="layer2"
      showgrid="true"
      inkscape:grid-bbox="true"
@@ -203,14 +202,16 @@
      inkscape:window-x="234"
      inkscape:window-y="30"
      inkscape:showpageshadow="false"
-     fill="#ef2929">
+     fill="#ef2929"
+     inkscape:document-rotation="0"
+     inkscape:window-maximized="0">
     <inkscape:grid
        id="GridFromPre046Settings"
        type="xygrid"
-       originx="0px"
-       originy="0px"
-       spacingx="1px"
-       spacingy="1px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
        color="#0000ff"
        empcolor="#0000ff"
        opacity="0.2"
