@@ -9,7 +9,6 @@ import (
 	"github.com/hneemann/parser2"
 	"github.com/hneemann/parser2/funcGen"
 	"github.com/hneemann/parser2/value"
-	"io"
 	"log"
 	"math"
 	"os"
@@ -329,6 +328,7 @@ func (t *Task) InputHasValidator(id InputId) bool {
 }
 
 type Chapter struct {
+	Include     string `xml:"file,attr"`
 	lecture     *Lecture
 	num         ChapterNum
 	StepByStep  bool `xml:"stepByStep,attr"`
@@ -354,6 +354,10 @@ func (c *Chapter) GetTask(tid TaskNum) (*Task, error) {
 		return nil, fmt.Errorf("task %d not found", tid)
 	}
 	return c.Task[tid], nil
+}
+
+func (c *Chapter) IsEmpty() bool {
+	return len(c.Task) == 0 && c.Description == "" && c.Title == ""
 }
 
 type Lecture struct {
@@ -401,6 +405,32 @@ func (l *Lecture) Init() error {
 	}
 
 	l.Description = cleanUpMarkdown(l.Description)
+
+	for i, c := range l.Chapter {
+		if c.Include != "" {
+			if !c.IsEmpty() {
+				return fmt.Errorf("chapter reference %s contains data", c.Include)
+			}
+
+			fi, ok := l.files[c.Include]
+			if !ok {
+				return fmt.Errorf("chapter %s not found", c.Include)
+			}
+
+			var ch Chapter
+			err := xml.Unmarshal(fi, &ch)
+			if err != nil {
+				return err
+			}
+
+			if ch.Include != "" {
+				return fmt.Errorf("chapter %s contains reference to chapter %s", c.Include, ch.Include)
+			}
+
+			l.Chapter[i] = &ch
+			delete(l.files, c.Include)
+		}
+	}
 
 	for cnum, chapter := range l.Chapter {
 		if chapter.Title == "" {
@@ -670,20 +700,6 @@ func (l *Lectures) Reload(id LectureId) (*Lecture, error) {
 		l.init()
 		return newLecture, nil
 	}
-}
-
-func New(r io.Reader) (*Lecture, error) {
-	var l Lecture
-	err := xml.NewDecoder(r).Decode(&l)
-	if err != nil {
-		return nil, err
-	}
-
-	err = l.Init()
-	if err != nil {
-		return nil, err
-	}
-	return &l, nil
 }
 
 type DataMap map[InputId]interface{}

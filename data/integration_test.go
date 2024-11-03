@@ -1,7 +1,6 @@
 package data
 
 import (
-	"bytes"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -138,8 +137,7 @@ func TestInit(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expectedError, func(t *testing.T) {
-			b := bytes.NewBufferString(tt.xml)
-			_, err := New(b)
+			_, err := readLectureToTest(tt.xml)
 			if tt.expectedError == "" {
 				assert.NoError(t, err)
 			} else {
@@ -291,7 +289,7 @@ func TestTest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.expectedError, func(t *testing.T) {
-			_, err := New(strings.NewReader(tt.xml))
+			_, err := readLectureToTest(tt.xml)
 			if tt.expectedError == "" {
 				assert.NoError(t, err)
 			} else {

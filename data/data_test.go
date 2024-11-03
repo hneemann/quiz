@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func readLectureToTest(xml string) (*Lecture, error) {
+	l, err := readLectureXml(strings.NewReader(xml))
+	if err != nil {
+		return nil, err
+	}
+	err = l.Init()
+	if err != nil {
+		return nil, err
+	}
+	return l, nil
+}
+
 func TestSimple(t *testing.T) {
 	xml := `<Lecture id="EL1">
     <Title>Elektronik 1</Title>
@@ -44,7 +56,7 @@ func TestSimple(t *testing.T) {
 	</Chapter>
 </Lecture>
 `
-	lecture, err := New(strings.NewReader(xml))
+	lecture, err := readLectureToTest(xml)
 	assert.NoError(t, err)
 
 	task1 := lecture.Chapter[0].Task[0]
@@ -99,7 +111,7 @@ Wie könnte eine gute Näherung für die Gleichung im Durchlassbereich ($U_D>0.5
 	</Chapter>
 </Lecture>
 `
-	lecture, err := New(strings.NewReader(xml))
+	lecture, err := readLectureToTest(xml)
 	assert.NoError(t, err)
 
 	task2 := lecture.Chapter[0].Task[0]

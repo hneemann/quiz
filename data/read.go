@@ -2,6 +2,7 @@ package data
 
 import (
 	"archive/zip"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -63,7 +64,7 @@ func readFolder(folder string) (*Lecture, error) {
 				}
 				defer file.Close()
 
-				lecture, err = New(file)
+				lecture, err = readLectureXml(file)
 				if err != nil {
 					return nil, fmt.Errorf("error parsing file %s: %w", path, err)
 				}
@@ -81,8 +82,13 @@ func readFolder(folder string) (*Lecture, error) {
 	}
 	lecture.files = fileData
 	lecture.folder = folder
+	err = lecture.Init()
+	if err != nil {
+		return nil, err
+	}
 	return lecture, nil
 }
+
 func readZipFile(zipFile string) (*Lecture, error) {
 	log.Printf("scanning zip file %s", zipFile)
 	r, err := os.Open(zipFile)
@@ -116,7 +122,7 @@ func ReadZip(r io.ReaderAt, size int64) (*Lecture, error) {
 			if err != nil {
 				return nil, fmt.Errorf("error opening file %s: %w", f.Name, err)
 			}
-			lecture, err = New(file)
+			lecture, err = readLectureXml(file)
 			if err != nil {
 				return nil, fmt.Errorf("error parsing file %s: %w", f.Name, err)
 			}
@@ -134,7 +140,21 @@ func ReadZip(r io.ReaderAt, size int64) (*Lecture, error) {
 	}
 	if lecture == nil {
 		return nil, fmt.Errorf("no xml file found in zip file")
+	} else {
+		lecture.files = fileData
+		err = lecture.Init()
+		if err != nil {
+			return nil, err
+		}
 	}
-	lecture.files = fileData
 	return lecture, nil
+}
+
+func readLectureXml(r io.Reader) (*Lecture, error) {
+	var l Lecture
+	err := xml.NewDecoder(r).Decode(&l)
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
 }
