@@ -424,9 +424,9 @@ func (l *Lecture) Init() error {
 			task.Question = cleanUpMarkdown(task.Question)
 
 			if task.Name == "" {
-				task.Name = fmt.Sprintf("Aufgabe %d", tNum+1)
+				task.Name = fmt.Sprintf("Frage %d", tNum+1)
 			} else {
-				task.Name = fmt.Sprintf("Aufgabe %d: %s", tNum+1, task.Name)
+				task.Name = fmt.Sprintf("Frage %d: %s", tNum+1, task.Name)
 			}
 
 			if len(task.Input) == 0 {

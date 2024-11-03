@@ -13,7 +13,7 @@
   <h2>{{.Chapter.Title}}</h2>
   {{markdown .Chapter.Description .Chapter.Lecture.Id}}
 
-  <h3>Aufgaben</h3>
+  <h3>Fragen</h3>
   {{range .Chapter.Task}}
      {{$avail:=$.IsAvail .Num}}
      {{if $avail}}<a href="/task/{{$.Chapter.Lecture.Id}}/{{$.Chapter.Num}}/{{.Num}}/">{{end}}
