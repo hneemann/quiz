@@ -406,30 +406,9 @@ func (l *Lecture) Init() error {
 
 	l.Description = cleanUpMarkdown(l.Description)
 
-	for i, c := range l.Chapter {
-		if c.Include != "" {
-			if !c.IsEmpty() {
-				return fmt.Errorf("chapter reference %s contains data", c.Include)
-			}
-
-			fi, ok := l.files[c.Include]
-			if !ok {
-				return fmt.Errorf("chapter %s not found", c.Include)
-			}
-
-			var ch Chapter
-			err := xml.Unmarshal(fi, &ch)
-			if err != nil {
-				return err
-			}
-
-			if ch.Include != "" {
-				return fmt.Errorf("chapter %s contains reference to chapter %s", c.Include, ch.Include)
-			}
-
-			l.Chapter[i] = &ch
-			delete(l.files, c.Include)
-		}
+	err := l.resolveIncludes()
+	if err != nil {
+		return err
 	}
 
 	for cnum, chapter := range l.Chapter {
@@ -507,6 +486,35 @@ func (l *Lecture) Init() error {
 			}
 
 			task.tid = task.createId()
+		}
+	}
+	return nil
+}
+
+func (l *Lecture) resolveIncludes() error {
+	for i, c := range l.Chapter {
+		if c.Include != "" {
+			if !c.IsEmpty() {
+				return fmt.Errorf("chapter referencing %s contains also other data which is ignored", c.Include)
+			}
+
+			fi, ok := l.files[c.Include]
+			if !ok {
+				return fmt.Errorf("chapter reference %s not found", c.Include)
+			}
+
+			var ch Chapter
+			err := xml.Unmarshal(fi, &ch)
+			if err != nil {
+				return err
+			}
+
+			if ch.Include != "" {
+				return fmt.Errorf("chapter %s contains reference to chapter %s", c.Include, ch.Include)
+			}
+
+			l.Chapter[i] = &ch
+			delete(l.files, c.Include)
 		}
 	}
 	return nil
