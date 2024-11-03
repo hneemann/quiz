@@ -180,3 +180,26 @@ func TestValidator(t *testing.T) {
 		})
 	}
 }
+
+func Test_cleanUpMarkdown(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"noNewLine", "a", "a"},
+		{"nl at end", "a\nb\n", "a\nb\n"},
+		{"space at eol", "a \nb \n ", "a\nb\n"},
+		{"simple1", "a\nb\nc", "a\nb\nc"},
+		{"simple2", "  a\n  b\n  c", "a\nb\nc"},
+		{"simple3", "  a\n   b\n  c", "a\n b\nc"},
+		{"tab", "\ta\n    b\n\tc", "a\nb\nc"},
+		{"emptyLine1", "  a\n   \t\n  c", "a\n\nc"},
+		{"emptyLine1", "  a\n   \t\n   c", "a\n\n c"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, cleanUpMarkdown(tt.in), "cleanUpMarkdown(%v)", tt.in)
+		})
+	}
+}

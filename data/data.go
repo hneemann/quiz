@@ -367,6 +367,14 @@ type Lecture struct {
 	files       map[string][]byte
 }
 
+func (l *Lecture) TaskCount() int {
+	n := 0
+	for _, c := range l.Chapter {
+		n += len(c.Task)
+	}
+	return n
+}
+
 func (l *Lecture) LID() LectureId {
 	return l.Id
 }
@@ -477,12 +485,17 @@ func (l *Lecture) Init() error {
 // cleanUpMarkdown removes leading spaces from lines.
 // Avoids markdown rendering of code.
 func cleanUpMarkdown(md string) string {
-	md = strings.TrimRight(md, " \t\r\n")
 	md = strings.TrimLeft(md, "\n")
+	md = strings.ReplaceAll(md, "\t", "    ") // tab means 4 spaces
 
 	lines := strings.Split(md, "\n")
 	if len(lines) <= 1 {
 		return strings.TrimSpace(md)
+	}
+
+	// remove trailing spaces
+	for i := range lines {
+		lines[i] = strings.TrimRight(lines[i], " ")
 	}
 
 	spaces := math.MaxInt32
@@ -496,18 +509,17 @@ func cleanUpMarkdown(md string) string {
 			}
 		}
 	}
-	if spaces > 0 {
-		sb := strings.Builder{}
-		for _, line := range lines {
-			if len(line) > 0 {
-				sb.WriteString(line[spaces:])
-			}
+	sb := strings.Builder{}
+	for i, line := range lines {
+		if len(line) > 0 {
+			sb.WriteString(line[spaces:])
+		}
+		if i < len(lines)-1 {
 			sb.WriteString("\n")
 		}
-		r := sb.String()
-		return r
 	}
-	return md
+	r := sb.String()
+	return r
 }
 
 func isIdent(id InputId) bool {
