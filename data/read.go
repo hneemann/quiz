@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -43,7 +42,6 @@ func ReadLectures(folder string) (*Lectures, error) {
 }
 
 func readFolder(folder string) (*Lecture, error) {
-	log.Printf("scanning folder %s", folder)
 	files, err := os.ReadDir(folder)
 	if err != nil {
 		return nil, fmt.Errorf("error reading folder %s: %w", folder, err)
@@ -90,7 +88,6 @@ func readFolder(folder string) (*Lecture, error) {
 }
 
 func readZipFile(zipFile string) (*Lecture, error) {
-	log.Printf("scanning zip file %s", zipFile)
 	r, err := os.Open(zipFile)
 	if err != nil {
 		return nil, fmt.Errorf("error reading zip file %s: %w", zipFile, err)

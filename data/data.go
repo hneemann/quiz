@@ -394,6 +394,10 @@ func (l *Lecture) GetFile(name string) ([]byte, error) {
 }
 
 func (l *Lecture) Init() error {
+	if err := checkIdent(string(l.Id)); err != nil {
+		return fmt.Errorf("invalid lecture id '%s' in lecturer '%s': %w", l.Id, l.Title, err)
+	}
+
 	if l.Title == "" {
 		return errors.New("lecture has no title")
 	}
@@ -441,8 +445,8 @@ func (l *Lecture) Init() error {
 					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Title, task.Name)
 				}
 
-				if !isIdent(i.Id) {
-					return fmt.Errorf("invalid id '%s' at input in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
+				if err := checkIdent(string(i.Id)); err != nil {
+					return fmt.Errorf("invalid id '%s' at input in chapter '%s' task '%s': %w", i.Id, chapter.Title, task.Name, err)
 				}
 
 				if _, ok := vars[i.Id]; ok {
@@ -488,6 +492,7 @@ func (l *Lecture) Init() error {
 			task.tid = task.createId()
 		}
 	}
+	log.Printf("lecture '%s' (id=%s) initialized with %d tasks and %d images", l.Title, l.Id, l.TaskCount(), len(l.files))
 	return nil
 }
 
@@ -560,21 +565,21 @@ func cleanUpMarkdown(md string) string {
 	return r
 }
 
-func isIdent(id InputId) bool {
+func checkIdent(id string) error {
 	for i, c := range id {
 		if i == 0 {
-			if c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+			if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
 				continue
 			}
-			return false
+			return fmt.Errorf("invalid character '%c' at position %d", c, i+1)
 		} else {
 			if c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') {
 				continue
 			}
-			return false
+			return fmt.Errorf("invalid character '%c' at position %d", c, i+1)
 		}
 	}
-	return true
+	return nil
 }
 
 func (l *Lecture) GetChapter(num ChapterNum) (*Chapter, error) {
