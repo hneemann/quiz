@@ -896,15 +896,25 @@ var myParser = value.New().
 		}.SetDescription("func a", "func b", "argList", "values",
 			"compares two functions by evaluating them for a list of arguments.\n"+
 				"It returns true if the difference between the two functions is less than 0.0001 for all arguments"))
-		f.AddStaticFunction("cmpFuncCplx", funcGen.Function[value.Value]{
-			Func: value.Must(f.GenerateFromString(`let n=parseFunc(b,vars).varUsages();
-                                                        let nMin=parseFunc(a,vars).varUsages();
-                                                        n<=nMin`, "a", "b", "vars")),
-			Args:   3,
+		f.AddStaticFunction("funcCplx", funcGen.Function[value.Value]{
+			Func:   value.Must(f.GenerateFromString(`parseFunc(f,vars).varUsages()`, "f", "vars")),
+			Args:   2,
 			IsPure: true,
-		}.SetDescription("func a", "func b", "argList",
-			"compares complexity of two functions. It returns true if the complexity of the second function\n"+
-				"is less or equal to the complexity of the first function"))
+		}.SetDescription("func", "argList",
+			"returns the complexity of a given function."))
+		f.AddStaticFunction("cmpFuncCplx", funcGen.Function[value.Value]{
+			Func: value.Must(f.GenerateFromString(`if cmpFunc(exp,is,vars,values)
+                                                        then
+                                                          if funcCplx(exp,vars)>=funcCplx(is,vars) 
+                                                          then true
+                                                          else "Der Ausdruck ist zwar korrekt, aber nicht vollständig vereinfacht!"
+                                                        else "Der Ausdruck ist nicht korrekt!"`, "exp", "is", "vars", "values")),
+			Args:   4,
+			IsPure: true,
+		}.SetDescription("expected func", "actual func", "argList", "values",
+			"compares two functions by evaluating them for a list of arguments.\n"+
+				"It returns true if the difference between the two functions is less than 0.0001 for all arguments and "+
+				"the complexity of the actual function is equal or less compared to the expected function."))
 		f.AddStaticFunction("cmpValues", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let isExp=parseFunc(isStr,[]);
                                                     let is=isExp.eval([]);
