@@ -22,7 +22,7 @@ func TestFromExpParser(t *testing.T) {
 		{input: "a*(b+c)", want: "<mrow><mi>a</mi><mo>*</mo><mo>(</mo><mrow><mi>b</mi><mo>+</mo><mi>c</mi></mrow><mo>)</mo></mrow>"},
 		{input: "a-(b+c)", want: "<mrow><mi>a</mi><mo>-</mo><mo>(</mo><mrow><mi>b</mi><mo>+</mo><mi>c</mi></mrow><mo>)</mo></mrow>"},
 		{input: "a/b", want: "<mfrac><mi>a</mi><mi>b</mi></mfrac>"},
-		{input: "(a+b)/(b+1)", want: "<mfrac><mi>a</mi><mi>b</mi></mfrac>"},
+		{input: "(a+b)/(b+1)", want: "<mfrac><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow><mrow><mi>b</mi><mo>+</mo><mn>1</mn></mrow></mfrac>"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
