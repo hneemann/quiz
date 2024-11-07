@@ -80,6 +80,10 @@ func (f *Row) ToMathMl(w io.Writer, attr map[string]string) {
 	})
 }
 
+func (f *Row) Items() []Ast {
+	return f.items
+}
+
 func (f *Row) Walk(walker Walker) {
 	walker(f)
 	for _, item := range f.items {
@@ -131,21 +135,21 @@ func (a *AddAttribute) Walk(walker Walker) {
 }
 
 type Fraction struct {
-	top    Ast
-	bottom Ast
+	Top    Ast
+	Bottom Ast
 }
 
 func (f *Fraction) ToMathMl(w io.Writer, attr map[string]string) {
 	tag(w, "mfrac", attr, func(w io.Writer) {
-		f.top.ToMathMl(w, nil)
-		f.bottom.ToMathMl(w, nil)
+		f.Top.ToMathMl(w, nil)
+		f.Bottom.ToMathMl(w, nil)
 	})
 }
 
 func (f *Fraction) Walk(walker Walker) {
 	walker(f)
-	f.top.Walk(walker)
-	f.bottom.Walk(walker)
+	f.Top.Walk(walker)
+	f.Bottom.Walk(walker)
 }
 
 type Index struct {
