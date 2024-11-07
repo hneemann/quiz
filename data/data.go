@@ -866,7 +866,7 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 				return nil, fmt.Errorf("expected a list, got %v", stack.Get(1))
 			}
 		}),
-		"varUsages": value.MethodAtType(0, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
+		"complexity": value.MethodAtType(0, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
 			ast, err := parser.Parse(e.expression)
 			if err != nil {
 				return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
@@ -874,6 +874,16 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 			v := countVarUsageVisitor{}
 			ast.Traverse(&v)
 			return value.Int(v.n), nil
+		}),
+		"mathMl": value.MethodAtType(0, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
+			ast, err := parser.Parse(e.expression)
+			if err != nil {
+				return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
+			}
+			a := MathMlFromAST(ast)
+			sb := strings.Builder{}
+			a.ToMathMl(&sb, nil)
+			return value.String(sb.String()), nil
 		}),
 	}
 }
@@ -897,7 +907,7 @@ var myParser = value.New().
 			"compares two functions by evaluating them for a list of arguments.\n"+
 				"It returns true if the difference between the two functions is less than 0.0001 for all arguments"))
 		f.AddStaticFunction("funcCplx", funcGen.Function[value.Value]{
-			Func:   value.Must(f.GenerateFromString(`parseFunc(f,vars).varUsages()`, "f", "vars")),
+			Func:   value.Must(f.GenerateFromString(`parseFunc(f,vars).complexity()`, "f", "vars")),
 			Args:   2,
 			IsPure: true,
 		}.SetDescription("func", "argList",
