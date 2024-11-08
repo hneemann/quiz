@@ -5,6 +5,16 @@
   <title>{{.Title}}</title>
   <link rel="icon" type="image/svg" href="/assets/icon.svg">
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+  <style>
+    th {
+      padding-top:1em;
+      padding-bottom:1em;
+    }
+    td.num {
+      text-align:right;
+      padding-left:1em;
+    }
+  </style>
 </head>
 <body>
   <div class="main">
@@ -12,12 +22,12 @@
     <table>
     {{range .Chapter}}
          <tr>
-           <th colspan="2" style="padding-top:1em;padding-bottom:1em">{{.Title}}</th>
+           <th colspan="2">{{.Title}}</th>
          </tr>
          {{range .Task}}
            <tr>
              <td>{{.Task}}</td>
-             <td style="text-align:right">{{.Count}}</td>
+             <td class="num">{{.Count}}</td>
            </tr>
          {{end}}
       {{end}}

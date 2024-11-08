@@ -17,14 +17,12 @@
       <h2>{{.Title}}</h2>
       {{markdown .Description $.Lecture.Id}}
       {{$c := $.Completed .Num}}
-      <div class="progress">
-        {{if eq $c .Tasks}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{.Tasks}}{{end}}
-      </div>
+      <p style="text-align:right;margin-bottom:-1em">{{if eq $c .Tasks}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{.Tasks}}{{end}}</p>
       </a>
     </div>
   {{end}}
 
-  <p><a class="nav" href="/">Übersicht</a></p>
+  <p><a class="nav" href="/">← Home</a></p>
 </div>
 </body>
 </html>

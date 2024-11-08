@@ -171,7 +171,13 @@ func (cd lectureData) Completed(cnum data.ChapterNum) int {
 		return 0
 	}
 
-	return cd.session.TasksCompleted(ch)
+	c := 0
+	for task := range ch.Iter {
+		if cd.session.IsTaskCompleted(task) {
+			c++
+		}
+	}
+	return c
 }
 
 func CreateLecture(lectures *data.Lectures) http.Handler {
@@ -218,11 +224,18 @@ func getTaskNumFromPath(p string) (data.TaskNum, string) {
 }
 
 func getChapterNumFromPath(p string) (data.ChapterNum, string) {
-	i, n := getIntFromPath(p)
-	return data.ChapterNum(i), n
+	cs, n := getStrFromPath(p)
+	cn, err := data.NewChapterNum(cs)
+	if err != nil {
+		return data.ChapterNum{0}, n
+	}
+	return cn, n
 }
 
-var chapterTemp = Templates.Lookup("chapter.html")
+var (
+	chapterTemp  = Templates.Lookup("chapter.html")
+	mChapterTemp = Templates.Lookup("mChapter.html")
+)
 
 type chapterData struct {
 	Chapter *data.Chapter
@@ -239,6 +252,25 @@ func (cd chapterData) Completed(num data.TaskNum) bool {
 		return false
 	}
 	return cd.session.IsTaskCompleted(task)
+}
+
+func (cd chapterData) CompletedTasks(num int) int {
+	if cd.session == nil {
+		return 0
+	}
+	if num < 0 || num >= len(cd.Chapter.Chapter) {
+		return 0
+	}
+
+	c := 0
+	chapter := cd.Chapter.Chapter[num]
+	for task := range chapter.Iter {
+		if cd.session.IsTaskCompleted(task) {
+			c++
+		}
+	}
+
+	return c
 }
 
 func (cd chapterData) IsAvail(num data.TaskNum) bool {
@@ -289,7 +321,11 @@ func CreateChapter(lectures *data.Lectures, states *data.LectureStates) http.Han
 
 		ses, _ := r.Context().Value(session.Key).(*session.Session)
 
-		err = chapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses, state: states.Get(lecture.Id)})
+		if chapter.HasSubChapter() {
+			err = mChapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses, state: states.Get(lecture.Id)})
+		} else {
+			err = chapterTemp.Execute(w, chapterData{Chapter: chapter, session: ses, state: states.Get(lecture.Id)})
+		}
 		if err != nil {
 			log.Println(err)
 		}
@@ -417,7 +453,7 @@ func CreateTask(lectures *data.Lectures, states *data.LectureStates) http.Handle
 
 		if ses != nil && ses.IsTaskCompleted(task) {
 			if nTask, err := task.Chapter().GetTask(tn + 1); err == nil {
-				td.Next = fmt.Sprintf("/task/%s/%d/%d/", lecture.Id, cn, nTask.Num())
+				td.Next = fmt.Sprintf("/task/%s/%v/%d/", lecture.Id, cn, nTask.Num())
 			}
 		}
 
@@ -511,13 +547,26 @@ func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.
 		}
 
 		stats := StatsData{Title: lecture.Title}
-		for _, c := range lecture.Chapter {
+		collectChapter(lecture.Chapter, statsMap, &stats, time.Now().AddDate(0, -6, 0).Unix())
+
+		err = statsViewTemp.Execute(w, stats)
+		if err != nil {
+			log.Println(err)
+		}
+	})
+}
+
+func collectChapter(chap data.ChapterList, statsMap []map[data.TaskId]int64, stats *StatsData, oldest int64) {
+	for _, c := range chap {
+		if c.HasSubChapter() {
+			collectChapter(c.Chapter, statsMap, stats, oldest)
+		} else {
 			chapter := StatsChapter{Title: c.Title}
 			for _, t := range c.Task {
 				counter := 0
 				for _, s := range statsMap {
-					if comp, ok := s[t.TID()]; ok {
-						if comp {
+					if date, ok := s[t.TID()]; ok {
+						if date > oldest {
 							counter++
 						}
 					}
@@ -526,12 +575,7 @@ func CreateStatistics(lectures *data.Lectures, sessions *session.Sessions) http.
 			}
 			stats.Chapter = append(stats.Chapter, chapter)
 		}
-
-		err = statsViewTemp.Execute(w, stats)
-		if err != nil {
-			log.Println(err)
-		}
-	})
+	}
 }
 
 var settingsTemp = Templates.Lookup("settings.html")

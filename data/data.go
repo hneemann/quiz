@@ -174,6 +174,8 @@ func (v *Validator) init(varsAvail map[InputId]InputType, mustBeUsed []InputId) 
 		return fmt.Errorf("no expression given")
 	}
 
+	v.Help = cleanUpMarkdown(v.Help)
+
 	f, err := myParser.Generate(v.Expression, "answer")
 	if err != nil {
 		return err
@@ -286,9 +288,32 @@ type (
 	TaskId     string
 	InputId    string
 	LectureId  string
-	ChapterNum int
+	ChapterNum []int
 	TaskNum    int
 )
+
+func (c ChapterNum) String() string {
+	var b strings.Builder
+	for i, n := range c {
+		if i > 0 {
+			b.WriteByte('.')
+		}
+		b.WriteString(strconv.Itoa(n))
+	}
+	return b.String()
+}
+
+func NewChapterNum(s string) (ChapterNum, error) {
+	var c ChapterNum
+	for _, n := range strings.Split(s, ".") {
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			return nil, err
+		}
+		c = append(c, i)
+	}
+	return c, nil
+}
 
 type Input struct {
 	Id        InputId `xml:"id,attr"`
@@ -328,13 +353,15 @@ func (t *Task) InputHasValidator(id InputId) bool {
 }
 
 type Chapter struct {
-	Include     string `xml:"file,attr"`
-	lecture     *Lecture
-	num         ChapterNum
-	StepByStep  bool `xml:"stepByStep,attr"`
-	Title       string
-	Description string
-	Task        []*Task
+	Include       string `xml:"file,attr"`
+	lecture       *Lecture
+	num           ChapterNum
+	StepByStep    bool `xml:"stepByStep,attr"`
+	Title         string
+	Description   string
+	Task          []*Task
+	Chapter       ChapterList
+	ParentChapter *Chapter
 }
 
 func (c *Chapter) Lecture() *Lecture {
@@ -346,6 +373,13 @@ func (c *Chapter) Num() ChapterNum {
 }
 
 func (c *Chapter) Tasks() int {
+	if c.HasSubChapter() {
+		n := 0
+		for _, ch := range c.Chapter {
+			n += ch.Tasks()
+		}
+		return n
+	}
 	return len(c.Task)
 }
 
@@ -360,13 +394,152 @@ func (c *Chapter) IsEmpty() bool {
 	return len(c.Task) == 0 && c.Description == "" && c.Title == ""
 }
 
+func (c *Chapter) HasSubChapter() bool {
+	return len(c.Chapter) > 0
+}
+
+func (c *Chapter) init(cnum ChapterNum, l *Lecture) error {
+	if c.Title == "" {
+		return fmt.Errorf("no title in chapter %d", cnum)
+	}
+	c.lecture = l
+	c.num = cnum
+	c.Description = cleanUpMarkdown(c.Description)
+
+	if len(c.Task) > 0 && c.HasSubChapter() {
+		return fmt.Errorf("chapter '%s' contains both tasks and subchapters", c.Title)
+	}
+
+	if c.HasSubChapter() {
+		for cnu, ch := range c.Chapter {
+			ch.ParentChapter = c
+			err := ch.init(append(cnum[0:len(cnum):len(cnum)], cnu), l)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		for tNum, task := range c.Task {
+			task.chapter = c
+			task.num = TaskNum(tNum)
+			task.Question = cleanUpMarkdown(task.Question)
+
+			if task.Name == "" {
+				task.Name = fmt.Sprintf("Frage %d", tNum+1)
+			} else {
+				task.Name = fmt.Sprintf("Frage %d: %s", tNum+1, task.Name)
+			}
+
+			if len(task.Input) == 0 {
+				return fmt.Errorf("no input in chapter '%s' task '%s'", c.Title, task.Name)
+			}
+
+			vars := make(map[InputId]InputType)
+			for _, i := range task.Input {
+				i.Label = cleanUpMarkdown(i.Label)
+
+				if i.Id == "" {
+					return fmt.Errorf("no id at input in chapter '%s' task '%s'", c.Title, task.Name)
+				}
+
+				if err := checkIdent(string(i.Id)); err != nil {
+					return fmt.Errorf("invalid id '%s' at input in chapter '%s' task '%s': %w", i.Id, c.Title, task.Name, err)
+				}
+
+				if _, ok := vars[i.Id]; ok {
+					return fmt.Errorf("duplicate input id '%s' in chapter '%s' task '%s'", i.Id, c.Title, task.Name)
+				}
+				vars[i.Id] = i.Type
+
+				if i.Label == "" {
+					return fmt.Errorf("no label at input id '%s' in chapter '%s' task '%s'", i.Id, c.Title, task.Name)
+				}
+			}
+
+			hasValidator := make(map[InputId]bool)
+			var needsToBeUsedInTaskValidator []InputId
+			for _, i := range task.Input {
+				if i.Validator != nil {
+					err := i.Validator.init(vars, []InputId{i.Id})
+					if err != nil {
+						return fmt.Errorf("invalid expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, c.Title, task.Name, err)
+					}
+					hasValidator[i.Id] = true
+				} else {
+					needsToBeUsedInTaskValidator = append(needsToBeUsedInTaskValidator, i.Id)
+				}
+
+				if task.Validator == nil && i.Validator == nil {
+					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, c.Title, task.Name)
+				}
+			}
+			task.inputHasValidator = hasValidator
+
+			if task.Validator != nil {
+				err := task.Validator.init(vars, needsToBeUsedInTaskValidator)
+				if err != nil {
+					return fmt.Errorf("invalid expression in chapter '%s' task '%s': %w", c.Title, task.Name, err)
+				}
+			} else {
+				if len(needsToBeUsedInTaskValidator) > 0 {
+					return fmt.Errorf("validator is missing in chapter '%s' task '%s'", c.Title, task.Name)
+				}
+			}
+
+			task.tid = task.createId()
+		}
+	}
+	return nil
+}
+
+func (c *Chapter) Iter(yield func(task *Task) bool) {
+	c.iter(yield)
+}
+
+func (c *Chapter) iter(yield func(task *Task) bool) bool {
+	if c.HasSubChapter() {
+		for _, ch := range c.Chapter {
+			if !ch.iter(yield) {
+				return false
+			}
+		}
+		return true
+	} else {
+		for _, t := range c.Task {
+			if !yield(t) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
+type ChapterList []*Chapter
+
+func (c ChapterList) get(num ChapterNum) *Chapter {
+	if len(num) == 0 {
+		return nil
+	}
+
+	cn := num[0]
+	if cn < 0 || cn >= len(c) {
+		return nil
+	}
+
+	if len(num) == 1 {
+		return c[cn]
+	}
+
+	return c[cn].Chapter.get(num[1:])
+}
+
 type Lecture struct {
 	Id          LectureId `xml:"id,attr"`
 	Title       string
 	Author      string
 	AuthorEMail string
 	Description string
-	Chapter     []*Chapter
+	Chapter     ChapterList
 	folder      string
 	files       map[string][]byte
 }
@@ -374,13 +547,21 @@ type Lecture struct {
 func (l *Lecture) TaskCount() int {
 	n := 0
 	for _, c := range l.Chapter {
-		n += len(c.Task)
+		n += c.Tasks()
 	}
 	return n
 }
 
 func (l *Lecture) LID() LectureId {
 	return l.Id
+}
+
+func (l *Lecture) Iter(yield func(task *Task) bool) {
+	for _, c := range l.Chapter {
+		if !c.iter(yield) {
+			return
+		}
+	}
 }
 
 func (l *Lecture) GetFile(name string) ([]byte, error) {
@@ -410,94 +591,24 @@ func (l *Lecture) Init() error {
 
 	l.Description = cleanUpMarkdown(l.Description)
 
-	err := l.resolveIncludes()
+	err := l.resolveIncludes(l.Chapter)
 	if err != nil {
 		return err
 	}
 
 	for cnum, chapter := range l.Chapter {
-		if chapter.Title == "" {
-			return fmt.Errorf("no title in chapter %d", cnum)
-		}
-		chapter.lecture = l
-		chapter.num = ChapterNum(cnum)
-		chapter.Description = cleanUpMarkdown(chapter.Description)
-		for tNum, task := range chapter.Task {
-			task.chapter = chapter
-			task.num = TaskNum(tNum)
-			task.Question = cleanUpMarkdown(task.Question)
-
-			if task.Name == "" {
-				task.Name = fmt.Sprintf("Frage %d", tNum+1)
-			} else {
-				task.Name = fmt.Sprintf("Frage %d: %s", tNum+1, task.Name)
-			}
-
-			if len(task.Input) == 0 {
-				return fmt.Errorf("no input in chapter '%s' task '%s'", chapter.Title, task.Name)
-			}
-
-			vars := make(map[InputId]InputType)
-			for _, i := range task.Input {
-				i.Label = cleanUpMarkdown(i.Label)
-
-				if i.Id == "" {
-					return fmt.Errorf("no id at input in chapter '%s' task '%s'", chapter.Title, task.Name)
-				}
-
-				if err := checkIdent(string(i.Id)); err != nil {
-					return fmt.Errorf("invalid id '%s' at input in chapter '%s' task '%s': %w", i.Id, chapter.Title, task.Name, err)
-				}
-
-				if _, ok := vars[i.Id]; ok {
-					return fmt.Errorf("duplicate input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
-				}
-				vars[i.Id] = i.Type
-
-				if i.Label == "" {
-					return fmt.Errorf("no label at input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
-				}
-			}
-
-			hasValidator := make(map[InputId]bool)
-			var needsToBeUsedInTaskValidator []InputId
-			for _, i := range task.Input {
-				if i.Validator != nil {
-					err := i.Validator.init(vars, []InputId{i.Id})
-					if err != nil {
-						return fmt.Errorf("invalid expression in input id '%s' in chapter '%s' task '%s': %w", i.Id, chapter.Title, task.Name, err)
-					}
-					hasValidator[i.Id] = true
-				} else {
-					needsToBeUsedInTaskValidator = append(needsToBeUsedInTaskValidator, i.Id)
-				}
-
-				if task.Validator == nil && i.Validator == nil {
-					return fmt.Errorf("validator is missing in input id '%s' in chapter '%s' task '%s'", i.Id, chapter.Title, task.Name)
-				}
-			}
-			task.inputHasValidator = hasValidator
-
-			if task.Validator != nil {
-				err := task.Validator.init(vars, needsToBeUsedInTaskValidator)
-				if err != nil {
-					return fmt.Errorf("invalid expression in chapter '%s' task '%s': %w", chapter.Title, task.Name, err)
-				}
-			} else {
-				if len(needsToBeUsedInTaskValidator) > 0 {
-					return fmt.Errorf("validator is missing in chapter '%s' task '%s'", chapter.Title, task.Name)
-				}
-			}
-
-			task.tid = task.createId()
+		err = chapter.init(ChapterNum{cnum}, l)
+		if err != nil {
+			return fmt.Errorf("error in lecture '%s', chapter %d: %w", l.Title, cnum+1, err)
 		}
 	}
+
 	log.Printf("lecture '%s' (id=%s) initialized with %d tasks and %d images", l.Title, l.Id, l.TaskCount(), len(l.files))
 	return nil
 }
 
-func (l *Lecture) resolveIncludes() error {
-	for i, c := range l.Chapter {
+func (l *Lecture) resolveIncludes(chapters []*Chapter) error {
+	for i, c := range chapters {
 		if c.Include != "" {
 			if !c.IsEmpty() {
 				return fmt.Errorf("chapter referencing %s contains also other data which is ignored", c.Include)
@@ -518,9 +629,17 @@ func (l *Lecture) resolveIncludes() error {
 				return fmt.Errorf("chapter %s contains reference to chapter %s", c.Include, ch.Include)
 			}
 
-			l.Chapter[i] = &ch
+			chapters[i] = &ch
 			delete(l.files, c.Include)
 		}
+
+		if chapters[i].HasSubChapter() {
+			err := l.resolveIncludes(chapters[i].Chapter)
+			if err != nil {
+				return err
+			}
+		}
+
 	}
 	return nil
 }
@@ -528,6 +647,10 @@ func (l *Lecture) resolveIncludes() error {
 // cleanUpMarkdown removes leading spaces from lines.
 // Avoids markdown rendering of code.
 func cleanUpMarkdown(md string) string {
+	if md == "" {
+		return ""
+	}
+
 	md = strings.TrimLeft(md, "\n")
 	md = strings.ReplaceAll(md, "\t", "    ") // tab means 4 spaces
 
@@ -583,10 +706,11 @@ func checkIdent(id string) error {
 }
 
 func (l *Lecture) GetChapter(num ChapterNum) (*Chapter, error) {
-	if num < 0 || int(num) >= len(l.Chapter) {
-		return nil, fmt.Errorf("chapter %d not found", num)
+	c := l.Chapter.get(num)
+	if c == nil {
+		return nil, fmt.Errorf("chapter %v not found in '%s'", num, l.Title)
 	}
-	return l.Chapter[num], nil
+	return c, nil
 }
 
 func (l *Lecture) GetTask(ch ChapterNum, tn TaskNum) (*Task, error) {
@@ -609,11 +733,9 @@ func (l *Lecture) CanReload() bool {
 }
 
 func (l *Lecture) HasTask(tid TaskId) bool {
-	for _, c := range l.Chapter {
-		for _, t := range c.Task {
-			if t.tid == tid {
-				return true
-			}
+	for task := range l.Iter {
+		if task.tid == tid {
+			return true
 		}
 	}
 	return false

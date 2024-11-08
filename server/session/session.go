@@ -21,7 +21,7 @@ type Session struct {
 	mutex        sync.Mutex
 	time         time.Time
 	admin        bool
-	completed    map[data.LectureId]map[data.TaskId]bool
+	completed    map[data.LectureId]map[data.TaskId]int64
 	persistToken string
 	dataModified bool
 }
@@ -44,20 +44,18 @@ func (s *Session) TaskCompleted(task *data.Task) {
 	defer s.mutex.Unlock()
 
 	if s.completed == nil {
-		s.completed = make(map[data.LectureId]map[data.TaskId]bool)
+		s.completed = make(map[data.LectureId]map[data.TaskId]int64)
 	}
 
 	lectureId := task.Chapter().Lecture().Id
 	lmap, ok := s.completed[lectureId]
 	if !ok {
-		lmap = make(map[data.TaskId]bool)
+		lmap = make(map[data.TaskId]int64)
 		s.completed[lectureId] = lmap
 	}
 
-	if !lmap[task.TID()] {
-		s.dataModified = true
-		lmap[task.TID()] = true
-	}
+	s.dataModified = true
+	lmap[task.TID()] = time.Now().Unix()
 }
 
 // IsTaskCompleted returns true if the task is completed.
@@ -74,28 +72,6 @@ func (s *Session) IsTaskCompleted(task *data.Task) bool {
 	}
 	_, ok = tmap[task.TID()]
 	return ok
-}
-
-// TasksCompleted returns the number of tasks completed in a chapter.
-func (s *Session) TasksCompleted(chapter *data.Chapter) int {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if s.completed == nil {
-		return 0
-	}
-	lmap, ok := s.completed[chapter.Lecture().Id]
-	if !ok {
-		return 0
-	}
-	count := 0
-	for _, t := range chapter.Task {
-		if _, ok := lmap[t.TID()]; ok {
-			count++
-		}
-	}
-
-	return count
 }
 
 func (s *Session) persist(path string) {
@@ -136,7 +112,7 @@ func (s *Session) restore(path string) {
 		log.Println("error reading session data", err)
 		return
 	}
-	s.completed = make(map[data.LectureId]map[data.TaskId]bool)
+	s.completed = make(map[data.LectureId]map[data.TaskId]int64)
 	err = serialize.New().Read(bytes.NewReader(fileData), &s.completed)
 	if err != nil {
 		log.Println("error unmarshal session data", err)
@@ -227,14 +203,14 @@ func New(dataFolder string, lectures *data.Lectures) *Sessions {
 // This function also removes old session data.
 // All session files are reloaded from disc to avoid data races with
 // active sessions
-func (s *Sessions) Stats(lid data.LectureId) ([]map[data.TaskId]bool, error) {
+func (s *Sessions) Stats(lid data.LectureId) ([]map[data.TaskId]int64, error) {
 	s.PersistAll()
 
 	list, err := os.ReadDir(s.dataFolder)
 	if err != nil {
 		return nil, err
 	}
-	var found []map[data.TaskId]bool
+	var found []map[data.TaskId]int64
 	for _, f := range list {
 		if !f.IsDir() {
 			filePath := filepath.Join(s.dataFolder, f.Name())

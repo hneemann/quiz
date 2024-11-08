@@ -7,23 +7,20 @@
   <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
 </head>
 <body>
-
   <div class="main">
-
   <h2>{{.Chapter.Title}}</h2>
-  {{markdown .Chapter.Description .Chapter.Lecture.Id}}
-
-  <h3>Fragen</h3>
-  {{range .Chapter.Task}}
-     {{$avail:=$.IsAvail .Num}}
-     {{if $avail}}<a href="/task/{{$.Chapter.Lecture.Id}}/{{$.Chapter.Num}}/{{.Num}}/">{{end}}
-         <div class="task" {{if not $avail}}style="color:gray"{{end}}>
-             {{.Name}}
-             {{if $.Completed .Num}}
-                 <img class="icon" src="/assets/completed.svg" />
-             {{end}}
-         </div>
-     {{if $avail}}</a>{{end}}
+  {{markdown .Chapter.Description .Chapter.Lecture.LID}}
+  {{range $i,$chap := .Chapter.Chapter}}
+    <div class="chapter">
+      <a href="/chapter/{{.Lecture.Id}}/{{.Num}}">
+      <h2>{{.Title}}</h2>
+      {{markdown $chap.Description $chap.Lecture.LID}}
+      {{$c := $.CompletedTasks $i}}
+      <p style="text-align:right;margin-bottom:-1em">
+          {{if eq $c $chap.Tasks}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{$chap.Tasks}}{{end}}
+      </p>
+      </a>
+    </div>
   {{end}}
 
   <p>
