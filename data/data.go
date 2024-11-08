@@ -485,7 +485,6 @@ func (c *Chapter) init(cnum ChapterNum, l *Lecture) error {
 					return fmt.Errorf("validator is missing in chapter '%s' task '%s'", c.Title, task.Name)
 				}
 			}
-
 			task.tid = task.createId()
 		}
 	}
@@ -516,7 +515,7 @@ func (c *Chapter) iter(yield func(task *Task) bool) bool {
 
 type ChapterList []*Chapter
 
-func (c ChapterList) get(num ChapterNum) *Chapter {
+func (c ChapterList) _get(num ChapterNum) *Chapter {
 	if len(num) == 0 {
 		return nil
 	}
@@ -530,7 +529,7 @@ func (c ChapterList) get(num ChapterNum) *Chapter {
 		return c[cn]
 	}
 
-	return c[cn].Chapter.get(num[1:])
+	return c[cn].Chapter._get(num[1:])
 }
 
 type Lecture struct {
@@ -706,7 +705,7 @@ func checkIdent(id string) error {
 }
 
 func (l *Lecture) GetChapter(num ChapterNum) (*Chapter, error) {
-	c := l.Chapter.get(num)
+	c := l.Chapter._get(num)
 	if c == nil {
 		return nil, fmt.Errorf("chapter %v not found in '%s'", num, l.Title)
 	}
@@ -1002,7 +1001,10 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 			if err != nil {
 				return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
 			}
-			a := MathMlFromAST(ast)
+			a, err := MathMlFromAST(ast)
+			if err != nil {
+				return nil, err
+			}
 			sb := strings.Builder{}
 			a.ToMathMl(&sb, nil)
 			return value.String(sb.String()), nil

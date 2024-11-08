@@ -153,41 +153,41 @@ func (f *Fraction) Walk(walker Walker) {
 }
 
 type Index struct {
-	base Ast
-	up   Ast
-	down Ast
+	Base Ast
+	Up   Ast
+	Down Ast
 }
 
 func (i *Index) ToMathMl(w io.Writer, attr map[string]string) {
-	if i.up == nil {
+	if i.Up == nil {
 		tag(w, "msub", attr, func(w io.Writer) {
-			i.base.ToMathMl(w, nil)
-			i.down.ToMathMl(w, nil)
+			i.Base.ToMathMl(w, nil)
+			i.Down.ToMathMl(w, nil)
 		})
 		return
 	}
-	if i.down == nil {
+	if i.Down == nil {
 		tag(w, "msup", attr, func(w io.Writer) {
-			i.base.ToMathMl(w, nil)
-			i.up.ToMathMl(w, nil)
+			i.Base.ToMathMl(w, nil)
+			i.Up.ToMathMl(w, nil)
 		})
 		return
 	}
 	tag(w, "msubsup", attr, func(w io.Writer) {
-		i.base.ToMathMl(w, nil)
-		i.down.ToMathMl(w, nil)
-		i.up.ToMathMl(w, nil)
+		i.Base.ToMathMl(w, nil)
+		i.Down.ToMathMl(w, nil)
+		i.Up.ToMathMl(w, nil)
 	})
 }
 
 func (i *Index) Walk(walker Walker) {
 	walker(i)
-	i.base.Walk(walker)
-	if i.up != nil {
-		i.up.Walk(walker)
+	i.Base.Walk(walker)
+	if i.Up != nil {
+		i.Up.Walk(walker)
 	}
-	if i.down != nil {
-		i.down.Walk(walker)
+	if i.Down != nil {
+		i.Down.Walk(walker)
 	}
 }
 
@@ -195,7 +195,7 @@ func NewIndex(base Ast, up Ast, down Ast) Ast {
 	if i, ok := base.(*SimpleItem); ok && i.tok.kind == Operator {
 		return &UnderOver{base: base, over: up, under: down}
 	}
-	return &Index{base: base, up: up, down: down}
+	return &Index{Base: base, Up: up, Down: down}
 }
 
 type UnderOver struct {
@@ -238,18 +238,18 @@ func (o *UnderOver) Walk(walker Walker) {
 }
 
 type Sqrt struct {
-	inner Ast
+	Inner Ast
 }
 
 func (s Sqrt) ToMathMl(w io.Writer, attr map[string]string) {
 	tag(w, "msqrt", attr, func(w io.Writer) {
-		s.inner.ToMathMl(w, nil)
+		s.Inner.ToMathMl(w, nil)
 	})
 }
 
 func (s Sqrt) Walk(walker Walker) {
 	walker(s)
-	s.inner.Walk(walker)
+	s.Inner.Walk(walker)
 }
 
 type align int
