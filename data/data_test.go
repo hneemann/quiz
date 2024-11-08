@@ -141,9 +141,10 @@ func TestParser(t *testing.T) {
 		{"1+2", value.Int(3)},
 		{"parseFunc(\"1/2\",[]).eval([])", value.Float(0.5)},
 		{"parseFunc(\"x+2\",[\"x\"]).eval([1])", value.Float(3)},
-		{"parseFunc(\"x+2\",[\"x\"]).varUsages()", value.Int(1)},
-		{"parseFunc(\"x+x\",[\"x\"]).varUsages()", value.Int(2)},
-		{"parseFunc(\"sin(x)\",[\"x\"]).varUsages()", value.Int(1)},
+		{"parseFunc(\"x\",[\"x\"]).complexity()", value.Int(1)},
+		{"parseFunc(\"x+2\",[\"x\"]).complexity()", value.Int(2)},
+		{"parseFunc(\"x+x\",[\"x\"]).complexity()", value.Int(2)},
+		{"parseFunc(\"sin(x)+1\",[\"x\"]).complexity()", value.Int(3)},
 		{"cmpFunc(\"2*x\",\"x+x\",[\"x\"],[[1],[2],[3]])", value.Bool(true)},
 		{"cmpFunc(\"2*x\",\"x+x+1\",[\"x\"],[[1],[2],[3]])", value.Bool(false)},
 	}
@@ -154,7 +155,7 @@ func TestParser(t *testing.T) {
 		t.Run(tst.expr, func(t *testing.T) {
 			f, err := myParser.Generate(tst.expr, "a")
 			assert.NoError(t, err)
-			if f == nil {
+			if f != nil {
 				r, err := f.Eval(value.NewMap(input))
 				assert.NoError(t, err)
 				assert.Equal(t, tst.result, r)

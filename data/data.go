@@ -930,13 +930,14 @@ func (e Expression) ToClosure() (funcGen.Function[value.Value], bool) {
 	return funcGen.Function[value.Value]{}, false
 }
 
-type countVarUsageVisitor struct {
+type complexityVisitor struct {
 	n int
 }
 
-func (c *countVarUsageVisitor) Visit(ast parser2.AST) bool {
+func (c *complexityVisitor) Visit(ast parser2.AST) bool {
 	switch a := ast.(type) {
 	case *parser2.FunctionCall:
+		c.n++
 		for _, arg := range a.Args {
 			arg.Traverse(c)
 		}
@@ -992,7 +993,7 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 			if err != nil {
 				return nil, GuiError{message: "Fehler im Ausdruck '" + e.expression + "'", cause: err}
 			}
-			v := countVarUsageVisitor{}
+			v := complexityVisitor{}
 			ast.Traverse(&v)
 			return value.Int(v.n), nil
 		}),
