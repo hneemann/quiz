@@ -747,7 +747,7 @@ type Lectures struct {
 	folder   string
 }
 
-func (l *Lectures) insert(lecture *Lecture) {
+func (l *Lectures) Insert(lecture *Lecture) {
 	l.rwMutex.Lock()
 	defer l.rwMutex.Unlock()
 
@@ -809,7 +809,7 @@ func (l *Lectures) Uploaded(file []byte) error {
 
 	_, err = f.Write(file)
 
-	l.insert(lecture)
+	l.Insert(lecture)
 
 	return nil
 }
@@ -942,7 +942,7 @@ func (c *complexityVisitor) Visit(ast parser2.AST) bool {
 			arg.Traverse(c)
 		}
 		return false
-	case *parser2.Const[value.Value]:
+	case *parser2.Const[float64]:
 		c.n++
 	case *parser2.Ident:
 		c.n++
@@ -963,7 +963,7 @@ func (g GuiError) Unwrap() error {
 	return g.cause
 }
 
-func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMap {
+func createExpressionMethods(parser *parser2.Parser[float64]) value.MethodMap {
 	return value.MethodMap{
 		"eval": value.MethodAtType(1, func(e Expression, stack funcGen.Stack[value.Value]) (value.Value, error) {
 			if argList, ok := stack.Get(1).(*value.List); ok {
@@ -1007,7 +1007,9 @@ func createExpressionMethods(parser *parser2.Parser[value.Value]) value.MethodMa
 				return nil, err
 			}
 			sb := strings.Builder{}
+			sb.WriteString("<math xmlns='http://www.w3.org/1998/Math/MathML'>")
 			a.ToMathMl(&sb, nil)
+			sb.WriteString("</math>")
 			return value.String(sb.String()), nil
 		}),
 	}
@@ -1075,8 +1077,9 @@ var myParser = value.New().
 		}.SetDescription("expected", "is", "percent",
 			"compares two values and returns true if the difference is less than the given percent of the expected value"))
 
+		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(floatParser.GetParser()))
+
 		p := f.GetParser()
-		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(p))
 		//p.SetNumberMatcher(number)
 		p.TextOperator(map[string]string{"in": "~", "is": "=", "or": "|", "and": "&"})
 	}).
