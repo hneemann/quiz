@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="main">
-  <h2>{{.Chapter.Title}}</h2>
+  <h2>{{.Chapter.FullTitle}}</h2>
   {{markdown .Chapter.Description .Chapter.Lecture.LID}}
   {{range $i,$chap := .Chapter.Chapter}}
     <div class="chapter">

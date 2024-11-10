@@ -8,7 +8,8 @@
 </head>
 <body {{if .HasResult}}onload="document.getElementById('submit').scrollIntoView();"{{end}}>
   <div class="main">
-  <h2>{{.Task.Name}}</h2>
+  <h2>{{.Task.Chapter.FullTitle}}</h2>
+  <h3>{{.Task.Name}}</h3>
   {{markdown .Task.Question .Task.Chapter.Lecture.Id}}
 
   <form action="." method="post">

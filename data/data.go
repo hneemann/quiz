@@ -398,6 +398,13 @@ func (c *Chapter) HasSubChapter() bool {
 	return len(c.Chapter) > 0
 }
 
+func (c *Chapter) FullTitle() string {
+	if c.ParentChapter != nil {
+		return c.ParentChapter.FullTitle() + " - " + c.Title
+	}
+	return c.Title
+}
+
 func (c *Chapter) init(cnum ChapterNum, l *Lecture) error {
 	if c.Title == "" {
 		return fmt.Errorf("no title in chapter %d", cnum)
