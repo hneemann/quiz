@@ -158,10 +158,8 @@ const (
 
 // New creates a new session manager.
 // The dataFolder is the folder where the session data is stored.
-// The lectures are used to cleanup the session data by removing completed
-// tasks that are not in the lecture list anymore. This is necessary because
-// the lecture hash is used to identify the lecture and the hash can change
-// if the lecture is modified.
+// The lectures are used to clean up the session data by removing completed
+// tasks that are not in the lecture list anymore.
 func New(dataFolder string, lectures *data.Lectures) *Sessions {
 
 	if _, err := os.Stat(dataFolder); err != nil {
