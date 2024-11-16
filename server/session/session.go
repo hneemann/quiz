@@ -344,8 +344,7 @@ func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 			c := context.WithValue(r.Context(), Key, ses)
 			parent.ServeHTTP(w, r.WithContext(c))
 		} else {
-			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
-			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
+			panic("Fehlende Rechte zum Aufruf dieser Ressource!")
 		}
 	})
 }

@@ -25,7 +25,7 @@ func CatchPanic(h http.Handler) http.Handler {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println(r)
-				err := errorTemp.Execute(writer, fmt.Sprintf("%v", r))
+				err := errorTemp.Execute(writer, fmt.Sprint(r))
 				if err != nil {
 					log.Println(err)
 				}
@@ -71,14 +71,14 @@ func main() {
 		mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
 	}
 
-	mux.Handle("/assets/", CatchPanic(Cache(http.FileServer(http.FS(server.Assets)), 60*8, *cache)))
+	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *cache))
 	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures, !isOidc)))
-	mux.Handle("/lecture/", sessions.Wrap(CatchPanic(server.CreateLecture(lectures))))
-	mux.Handle("/chapter/", sessions.Wrap(CatchPanic(server.CreateChapter(lectures, states))))
-	mux.Handle("/task/", sessions.Wrap(CatchPanic(server.CreateTask(lectures, states))))
-	mux.Handle("/admin/", sessions.WrapAdmin(CatchPanic(server.CreateAdmin(lectures))))
-	mux.Handle("/statistics/", sessions.WrapAdmin(CatchPanic(server.CreateStatistics(lectures, sessions))))
-	mux.Handle("/settings/", sessions.WrapAdmin(CatchPanic(server.CreateSettings(lectures, states))))
+	mux.Handle("/lecture/", CatchPanic(sessions.Wrap(server.CreateLecture(lectures))))
+	mux.Handle("/chapter/", CatchPanic(sessions.Wrap(server.CreateChapter(lectures, states))))
+	mux.Handle("/task/", CatchPanic(sessions.Wrap(server.CreateTask(lectures, states))))
+	mux.Handle("/admin/", CatchPanic(sessions.WrapAdmin(server.CreateAdmin(lectures))))
+	mux.Handle("/statistics/", CatchPanic(sessions.WrapAdmin(server.CreateStatistics(lectures, sessions))))
+	mux.Handle("/settings/", CatchPanic(sessions.WrapAdmin(server.CreateSettings(lectures, states))))
 	mux.Handle("/image/", CatchPanic(Cache(server.CreateImages(lectures), 60, *cache)))
 	mux.Handle("/logout", session.LogoutHandler(sessions))
 
