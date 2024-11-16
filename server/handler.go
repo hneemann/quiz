@@ -130,7 +130,7 @@ func doMath(w io.Writer, latex []byte, block bool) {
 
 var mainTemp = Templates.Lookup("main.html")
 
-func CreateMain(lectures *data.Lectures) http.Handler {
+func CreateMain(lectures *data.Lectures, logout bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		isAdmin := false
@@ -140,9 +140,11 @@ func CreateMain(lectures *data.Lectures) http.Handler {
 
 		data := struct {
 			Lectures *data.Lectures
+			Logout   bool
 			Admin    bool
 		}{
 			Lectures: lectures,
+			Logout:   logout,
 			Admin:    isAdmin,
 		}
 

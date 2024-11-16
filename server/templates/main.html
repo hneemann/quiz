@@ -22,7 +22,9 @@
   {{end}}
 
   <p>
+    {{if .Logout}}
     <a class="nav" href="/logout">Logout</a>
+    {{end}}
     {{if .Admin}}
     <a class="nav" href="/admin">Administration</a>
     {{end}}

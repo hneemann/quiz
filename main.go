@@ -62,16 +62,6 @@ func main() {
 	states := data.NewLectureStates(filepath.Join(*dataFolder, "state"))
 
 	mux := http.NewServeMux()
-	mux.Handle("/assets/", CatchPanic(Cache(http.FileServer(http.FS(server.Assets)), 60*8, *cache)))
-	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures)))
-	mux.Handle("/lecture/", sessions.Wrap(CatchPanic(server.CreateLecture(lectures))))
-	mux.Handle("/chapter/", sessions.Wrap(CatchPanic(server.CreateChapter(lectures, states))))
-	mux.Handle("/task/", sessions.Wrap(CatchPanic(server.CreateTask(lectures, states))))
-	mux.Handle("/admin/", sessions.WrapAdmin(CatchPanic(server.CreateAdmin(lectures))))
-	mux.Handle("/statistics/", sessions.WrapAdmin(CatchPanic(server.CreateStatistics(lectures, sessions))))
-	mux.Handle("/settings/", sessions.WrapAdmin(CatchPanic(server.CreateSettings(lectures, states))))
-	mux.Handle("/image/", CatchPanic(Cache(server.CreateImages(lectures), 60, *cache)))
-	mux.Handle("/logout", session.LogoutHandler(sessions))
 
 	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte(session.CreateRandomString(16)), sessions)
 
@@ -80,6 +70,17 @@ func main() {
 		loginTemp := server.Templates.Lookup("login.html")
 		mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
 	}
+
+	mux.Handle("/assets/", CatchPanic(Cache(http.FileServer(http.FS(server.Assets)), 60*8, *cache)))
+	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures, !isOidc)))
+	mux.Handle("/lecture/", sessions.Wrap(CatchPanic(server.CreateLecture(lectures))))
+	mux.Handle("/chapter/", sessions.Wrap(CatchPanic(server.CreateChapter(lectures, states))))
+	mux.Handle("/task/", sessions.Wrap(CatchPanic(server.CreateTask(lectures, states))))
+	mux.Handle("/admin/", sessions.WrapAdmin(CatchPanic(server.CreateAdmin(lectures))))
+	mux.Handle("/statistics/", sessions.WrapAdmin(CatchPanic(server.CreateStatistics(lectures, sessions))))
+	mux.Handle("/settings/", sessions.WrapAdmin(CatchPanic(server.CreateSettings(lectures, states))))
+	mux.Handle("/image/", CatchPanic(Cache(server.CreateImages(lectures), 60, *cache)))
+	mux.Handle("/logout", session.LogoutHandler(sessions))
 
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}
 
