@@ -63,7 +63,11 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback", []byte(session.CreateRandomString(16)), sessions)
+	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback",
+		func(ident string, admin bool, w http.ResponseWriter) {
+			sessions.Create(ident, admin, w)
+		},
+	)
 
 	if !isOidc {
 		log.Println("use simple dummy authenticator instead of oidc")
