@@ -11,6 +11,7 @@ import (
 type LectureState struct {
 	ShowSolutions bool
 	ShowAllTasks  bool
+	Disabled      bool
 }
 
 type LectureStates struct {

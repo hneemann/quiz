@@ -17,6 +17,8 @@
         <label for="showSolutions">Das Anzeigen der Lösungen erlauben</label><br/>
         <input name="showAllTasks" type="checkbox" value="true" {{if .Settings.ShowAllTasks}}checked="true"{{end}}/>
         <label for="showAllTasks">Alle Fragen sind verfügbar</label><br/>
+        <input name="disabled" type="checkbox" value="true" {{if .Settings.Disabled}}checked="true"{{end}}/>
+        <label for="disabled">Nicht sichtbar</label><br/>
     </p>
     <button type="submit">Speichern</button>
 </form>

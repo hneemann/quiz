@@ -130,7 +130,27 @@ func doMath(w io.Writer, latex []byte, block bool) {
 
 var mainTemp = Templates.Lookup("main.html")
 
-func CreateMain(lectures *data.Lectures, logout bool) http.Handler {
+type mainData struct {
+	Lectures *data.Lectures
+	Logout   bool
+	Admin    bool
+	states   *data.LectureStates
+}
+
+func (md *mainData) Visible(id data.LectureId) bool {
+	if md.Admin {
+		return true
+	}
+	state := md.states.Get(id)
+	return !state.Disabled
+}
+
+func (md *mainData) Hidden(id data.LectureId) bool {
+	state := md.states.Get(id)
+	return state.Disabled
+}
+
+func CreateMain(lectures *data.Lectures, logout bool, states *data.LectureStates) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		isAdmin := false
@@ -138,17 +158,14 @@ func CreateMain(lectures *data.Lectures, logout bool) http.Handler {
 			isAdmin = ses.IsAdmin()
 		}
 
-		data := struct {
-			Lectures *data.Lectures
-			Logout   bool
-			Admin    bool
-		}{
+		data := mainData{
 			Lectures: lectures,
 			Logout:   logout,
 			Admin:    isAdmin,
+			states:   states,
 		}
 
-		err := mainTemp.Execute(w, data)
+		err := mainTemp.Execute(w, &data)
 		if err != nil {
 			log.Println(err)
 		}
@@ -605,6 +622,7 @@ func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Ha
 
 			settings.ShowSolutions = r.Form.Get("showSolutions") == "true"
 			settings.ShowAllTasks = r.Form.Get("showAllTasks") == "true"
+			settings.Disabled = r.Form.Get("disabled") == "true"
 
 			err = states.SetState(id, settings)
 			if err != nil {

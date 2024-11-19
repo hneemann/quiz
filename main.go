@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 var errorTemp = server.Templates.Lookup("error.html")
@@ -50,6 +51,7 @@ func main() {
 	key := flag.String("key", "", "key file e.g. key.pem")
 	cache := flag.Bool("cache", false, "enables browser caching")
 	port := flag.Int("port", 8080, "port")
+	delay := flag.Duration("delay", 0, "start delay given in ms")
 	flag.Parse()
 
 	lectures, err := data.ReadLectures(ensureFolderExists(filepath.Join(*dataFolder, "lectures")))
@@ -62,6 +64,11 @@ func main() {
 	states := data.NewLectureStates(filepath.Join(*dataFolder, "state"))
 
 	mux := http.NewServeMux()
+
+	if *delay > 0 {
+		log.Println("oidc start delay for", *delay)
+		time.Sleep(*delay)
+	}
 
 	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback",
 		func(ident string, admin bool, w http.ResponseWriter) {
@@ -76,7 +83,7 @@ func main() {
 	}
 
 	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *cache))
-	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures, !isOidc)))
+	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures, !isOidc, states)))
 	mux.Handle("/lecture/", CatchPanic(sessions.Wrap(server.CreateLecture(lectures))))
 	mux.Handle("/chapter/", CatchPanic(sessions.Wrap(server.CreateChapter(lectures, states))))
 	mux.Handle("/task/", CatchPanic(sessions.Wrap(server.CreateTask(lectures, states))))
