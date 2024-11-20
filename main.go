@@ -99,7 +99,7 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		log.Print("terminated")
+		log.Print("received SIGINT")
 
 		err := serv.Shutdown(context.Background())
 		if err != nil {
