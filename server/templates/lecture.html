@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>{{.Lecture.Title}}</title>
-  <link rel="icon" type="image/svg" href="/assets/icon.svg">
-  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+  <link rel="icon" type="image/svg" href="/static/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/static/style.css"/>
 </head>
 <body>
   <div class="main">
@@ -17,7 +17,7 @@
       <h2>{{.Title}}</h2>
       {{markdown .Description $.Lecture.Id}}
       {{$c := $.Completed .Num}}
-      <p style="text-align:right;margin-bottom:-1em">{{if eq $c .Tasks}}<img class="progressIcon" src="/assets/completed.svg" />{{else}}{{$c}}/{{.Tasks}}{{end}}</p>
+      <p style="text-align:right;margin-bottom:-1em">{{if eq $c .Tasks}}<img class="progressIcon" src="/static/completed.svg" />{{else}}{{$c}}/{{.Tasks}}{{end}}</p>
       </a>
     </div>
   {{end}}

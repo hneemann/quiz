@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>{{.Chapter.Title}}</title>
-  <link rel="icon" type="image/svg" href="/assets/icon.svg">
-  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+  <link rel="icon" type="image/svg" href="/static/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/static/style.css"/>
 </head>
 <body>
 
@@ -20,7 +20,7 @@
          <div class="task" {{if not $avail}}style="color:gray"{{end}}>
              {{.Name}}
              {{if $.Completed .Num}}
-                 <img class="icon" src="/assets/completed.svg" />
+                 <img class="icon" src="/static/completed.svg" />
              {{end}}
          </div>
      {{if $avail}}</a>{{end}}

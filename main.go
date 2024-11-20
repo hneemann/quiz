@@ -49,9 +49,9 @@ func main() {
 	dataFolder := flag.String("data", ".", "data folder")
 	cert := flag.String("cert", "", "certificate file e.g. cert.pem")
 	key := flag.String("key", "", "key file e.g. key.pem")
-	cache := flag.Bool("cache", false, "enables browser caching")
+	cache := flag.Bool("cache", false, "enables browser caching for static content")
 	port := flag.Int("port", 8080, "port")
-	delay := flag.Duration("delay", 0, "start delay given in ms")
+	delay := flag.Duration("delay", 0, "oidc start delay e.q. '2s' or '100ms'")
 	flag.Parse()
 
 	lectures, err := data.ReadLectures(ensureFolderExists(filepath.Join(*dataFolder, "lectures")))
@@ -66,7 +66,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	if *delay > 0 {
-		log.Println("oidc start delay for", *delay)
+		log.Println("delay oidc start for", *delay)
 		time.Sleep(*delay)
 	}
 
@@ -82,7 +82,7 @@ func main() {
 		mux.Handle("/login", session.LoginHandler(sessions, loginTemp, session.AuthFunc(Authenticate)))
 	}
 
-	mux.Handle("/assets/", Cache(http.FileServer(http.FS(server.Assets)), 60*8, *cache))
+	mux.Handle("/static/", Cache(http.FileServer(http.FS(server.Static)), 60*8, *cache))
 	mux.Handle("/", sessions.Wrap(server.CreateMain(lectures, !isOidc, states)))
 	mux.Handle("/lecture/", CatchPanic(sessions.Wrap(server.CreateLecture(lectures))))
 	mux.Handle("/chapter/", CatchPanic(sessions.Wrap(server.CreateChapter(lectures, states))))

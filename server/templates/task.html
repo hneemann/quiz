@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>{{.Task.Name}}</title>
-  <link rel="icon" type="image/svg" href="/assets/icon.svg">
-  <link rel="stylesheet" type="text/css" href="/assets/style.css"/>
+  <link rel="icon" type="image/svg" href="/static/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/static/style.css"/>
 </head>
 <body {{if .HasResult}}onload="document.getElementById('submit').scrollIntoView();"{{end}}>
   <div class="main">
@@ -24,7 +24,7 @@
           <td class="result-c2c"><label for="input_{{.Id}}">{{markdown .Label $.Task.Chapter.Lecture.Id}}</label></td>
         {{end}}
         {{if $.HasHook .Id}}
-           <td><img class="progressIcon" src="/assets/completed.svg" /></td>
+           <td><img class="progressIcon" src="/static/completed.svg" /></td>
         {{end}}
       </tr>
         {{if $.GetResult .Id}}

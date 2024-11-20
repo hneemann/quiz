@@ -23,8 +23,8 @@ import (
 	"time"
 )
 
-//go:embed assets/*
-var Assets embed.FS
+//go:embed static/*
+var Static embed.FS
 
 //go:embed templates/*
 var templateFS embed.FS
