@@ -5,20 +5,19 @@
   <title>{{.Chapter.Title}}</title>
   <link rel="icon" type="image/svg" href="/static/icon.svg">
   <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+  <script src="/static/main.js"></script>
 </head>
 <body>
   <div class="main">
   <h2>{{.Chapter.FullTitle}}</h2>
   {{markdown .Chapter.Description .Chapter.Lecture.LID}}
   {{range $i,$chap := .Chapter.Chapter}}
-    <div class="chapter">
-      <a href="/chapter/{{.Lecture.Id}}/{{.Num}}">
+    <div onclick="goto('/chapter/{{.Lecture.Id}}/{{.Num}}')" class="chapter">
       <h2>{{.Title}}</h2>
       {{markdown $chap.Description $chap.Lecture.LID}}
       {{$c := $.CompletedTasks $i}}
       <p style="text-align:right;margin-bottom:-1em">
           {{if eq $c $chap.Tasks}}<img class="progressIcon" src="/static/completed.svg" />{{else}}{{$c}}/{{$chap.Tasks}}{{end}}
-      </p>
       </a>
     </div>
   {{end}}

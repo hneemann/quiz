@@ -5,6 +5,7 @@
   <title>Quiz</title>
   <link rel="icon" type="image/svg" href="/static/icon.svg">
   <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+  <script src="/static/main.js"></script>
 </head>
 <body>
 
@@ -12,14 +13,12 @@
   <h2>Vorlesungen</h2>
   {{range .Lectures.List}}
     {{if $.Visible .LID}}
-      <a href="/lecture/{{.LID}}">
-      <div class="lecture"{{if $.Hidden .LID}} style="color:gray;"{{end}}>
+      <div onclick="goto('/lecture/{{.LID}}')" class="lecture"{{if $.Hidden .LID}} style="color:gray;"{{end}}>
         <h2>{{.Title}}</h2>
         <p>{{markdown .Description .LID}}</p>
         <p style="font-size:80%;text-align:right;margin-bottom:-1em">{{.TaskCount}} Fragen</p>
         <!--p style="font-size:80%;text-align:right;margin-bottom:-1em">{{.Author}}</p-->
       </div>
-      </a>
     {{end}}
   {{end}}
 
