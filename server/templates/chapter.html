@@ -14,6 +14,7 @@
   {{markdown .Chapter.Description .Chapter.Lecture.Id}}
 
   <h3>Fragen</h3>
+  {{if .Chapter.Task}}
   {{range .Chapter.Task}}
      {{$avail:=$.IsAvail .Num}}
      {{if $avail}}<a href="/task/{{$.Chapter.Lecture.Id}}/{{$.Chapter.Num}}/{{.Num}}/">{{end}}
@@ -24,6 +25,9 @@
              {{end}}
          </div>
      {{if $avail}}</a>{{end}}
+  {{end}}
+  {{else}}
+    <p>Keine Fragen verfügbar.</p>
   {{end}}
 
   <p>

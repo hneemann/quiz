@@ -14,11 +14,11 @@
 <form action="." method="post">
     <p>
         <input name="showSolutions" type="checkbox" value="true" {{if .Settings.ShowSolutions}}checked="true"{{end}}/>
-        <label for="showSolutions">Das Anzeigen der Lösungen erlauben</label><br/>
+        <label for="showSolutions">Das Anzeigen der Lösungen erlauben.</label><br/>
         <input name="showAllTasks" type="checkbox" value="true" {{if .Settings.ShowAllTasks}}checked="true"{{end}}/>
-        <label for="showAllTasks">Alle Fragen sind verfügbar</label><br/>
+        <label for="showAllTasks">Alle Fragen verfügbar machen.</label><br/>
         <input name="disabled" type="checkbox" value="true" {{if .Settings.Disabled}}checked="true"{{end}}/>
-        <label for="disabled">Nicht sichtbar</label><br/>
+        <label for="disabled">Lektion komplett verbergen.</label><br/>
     </p>
     <button type="submit">Speichern</button>
 </form>
