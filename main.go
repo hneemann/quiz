@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -95,18 +96,18 @@ func main() {
 
 	serv := &http.Server{Addr: ":" + strconv.Itoa(*port), Handler: mux}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		<-c
-		log.Print("received SIGINT")
+		s := <-c
+		log.Print("received signal ", s)
 
 		err := serv.Shutdown(context.Background())
 		if err != nil {
 			log.Println(err)
 		}
 		for {
-			<-c
+			log.Print("received signal ", <-c)
 		}
 	}()
 
