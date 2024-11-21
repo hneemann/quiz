@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
-	"time"
 )
 
 var errorTemp = server.Templates.Lookup("error.html")
@@ -52,7 +51,6 @@ func main() {
 	key := flag.String("key", "", "key file e.g. key.pem")
 	cache := flag.Bool("cache", false, "enables browser caching for static content")
 	port := flag.Int("port", 8080, "port")
-	delay := flag.Duration("delay", 0, "oidc start delay e.q. '2s' or '100ms'")
 	flag.Parse()
 
 	lectures, err := data.ReadLectures(ensureFolderExists(filepath.Join(*dataFolder, "lectures")))
@@ -65,11 +63,6 @@ func main() {
 	states := data.NewLectureStates(filepath.Join(*dataFolder, "state"))
 
 	mux := http.NewServeMux()
-
-	if *delay > 0 {
-		log.Println("delay oidc start for", *delay)
-		time.Sleep(*delay)
-	}
 
 	isOidc := myOidc.RegisterLogin(mux, "/login", "/auth/callback",
 		func(ident string, admin bool, w http.ResponseWriter) {
@@ -100,14 +93,14 @@ func main() {
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		s := <-c
-		log.Print("received signal ", s)
+		log.Print("server received signal ", s)
 
 		err := serv.Shutdown(context.Background())
 		if err != nil {
 			log.Println(err)
 		}
 		for {
-			log.Print("received signal ", <-c)
+			log.Print("server received signal ", <-c)
 		}
 	}()
 

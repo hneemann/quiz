@@ -65,9 +65,25 @@ func RegisterLogin(mux *http.ServeMux, loginPath, callbackPath string, createSes
 		options = append(options, rp.WithJWTProfile(rp.SignerFromKeyPath(keyPath)))
 	}
 
-	provider, err := rp.NewRelyingPartyOIDC(context.Background(), issuer, clientID, clientSecret, redirectURI, scopes, options...)
-	if err != nil {
-		log.Fatalf("error creating provider %s", err.Error())
+	retry := 0
+	var provider rp.RelyingParty
+	for {
+		var err error
+		provider, err = rp.NewRelyingPartyOIDC(context.Background(), issuer, clientID, clientSecret, redirectURI, scopes, options...)
+		if err != nil {
+			if retry > 2 {
+				log.Fatalf("error creating provider: %v, give up!", err.Error())
+			} else {
+				log.Printf("error creating provider: %v, retrying in 2 seconds", err.Error())
+				time.Sleep(2 * time.Second)
+				retry++
+			}
+		} else {
+			if retry > 0 {
+				log.Printf("provider created after %d retries", retry)
+			}
+			break
+		}
 	}
 
 	// generate some state (representing the state of the user in your application,
