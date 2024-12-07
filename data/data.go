@@ -1136,6 +1136,8 @@ func createExpression(expr string, args []string) (value.Value, error) {
 		return nil, fmt.Errorf("Der Ausdruck ist leer!")
 	}
 
+	expr = strings.ReplaceAll(expr, "—", "-")
+
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
 		log.Print("error parsing expression:", err)
