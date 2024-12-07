@@ -4,8 +4,9 @@ go 1.23
 
 require (
 	github.com/gomarkdown/markdown v0.0.0-20240930133441-72d49d9543d8
+	github.com/google/uuid v1.6.0
 	github.com/hneemann/objectDB v0.0.0-20240827072326-3997da940df8
-	github.com/hneemann/parser2 v0.0.0-20241020114559-e66c72058575
+	github.com/hneemann/parser2 v0.0.0-20241207115235-9ad385a6e763
 	github.com/stretchr/testify v1.9.0
 	github.com/zitadel/oidc/v3 v3.31.0
 )
@@ -15,7 +16,6 @@ require (
 	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/hneemann/iterator v0.0.0-20240630073221-aab15310e28c // indirect
 	github.com/kr/text v0.2.0 // indirect
