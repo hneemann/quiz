@@ -306,7 +306,6 @@ func (s *Sessions) PersistAll() {
 	for _, session := range s.sessions {
 		session.persist(path.Join(s.dataFolder, session.persistToken))
 	}
-	log.Println("persisted all sessions")
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
