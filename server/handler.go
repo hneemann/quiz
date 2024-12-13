@@ -657,13 +657,28 @@ func CreateLogs(folder string) http.Handler {
 			panic(err)
 		}
 
-		var names []string
+		type entry struct {
+			Name string
+			Size int64
+		}
+
+		var names []entry
 		for _, e := range entries {
 			if !e.IsDir() {
-				names = append(names, e.Name())
+				var size int64
+				if info, er := e.Info(); er == nil {
+					size = info.Size()
+				}
+				names = append(names, entry{
+					Name: e.Name(),
+					Size: size,
+				})
 			}
 		}
-		sort.Strings(names)
+
+		sort.Slice(names, func(i, j int) bool {
+			return names[i].Name > names[j].Name
+		})
 
 		err = logsTemp.Execute(w, names)
 		if err != nil {
