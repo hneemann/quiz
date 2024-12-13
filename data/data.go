@@ -1140,7 +1140,7 @@ func createExpression(expr string, args []string) (value.Value, error) {
 
 	fu, err := floatParser.Generate(expr, args...)
 	if err != nil {
-		log.Print("error parsing expression:", err)
+		log.Printf("error parsing expression '%s': %v", expr, err)
 		return nil, GuiError{message: fmt.Sprintf("Der Ausdruck '%s' enthält Fehler und kann nicht analysiert werden!", expr), cause: err}
 	}
 	return Expression{expression: expr, fu: fu}, nil

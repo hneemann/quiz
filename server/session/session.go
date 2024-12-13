@@ -32,6 +32,18 @@ func (s *Session) touch() {
 	s.time = time.Now()
 }
 
+func (s *Session) String() string {
+	if s == nil {
+		return "no session"
+	} else {
+		if s.admin {
+			return "admin:" + s.persistToken
+		} else {
+			return "user:" + s.persistToken
+		}
+	}
+}
+
 func (s *Session) IsAdmin() bool {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -343,6 +355,7 @@ func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 			c := context.WithValue(r.Context(), Key, ses)
 			parent.ServeHTTP(w, r.WithContext(c))
 		} else {
+			log.Println("admin required", ses, r.URL)
 			panic("Fehlende Rechte zum Aufruf dieser Ressource!")
 		}
 	})
