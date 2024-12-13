@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -47,11 +48,19 @@ func Authenticate(user, pass string) (string, bool, error) {
 
 func main() {
 	dataFolder := flag.String("data", ".", "data folder")
+	logFolder := flag.String("logs", "logs", "log folder")
 	cert := flag.String("cert", "", "certificate file e.g. cert.pem")
 	key := flag.String("key", "", "key file e.g. key.pem")
 	cache := flag.Bool("cache", false, "enables browser caching for static content")
 	port := flag.Int("port", 8080, "port")
 	flag.Parse()
+
+	var logPath string
+	if strings.HasPrefix(*logFolder, "/") {
+		logPath = *logFolder
+	} else {
+		logPath = filepath.Join(*dataFolder, *logFolder)
+	}
 
 	lectures, err := data.ReadLectures(ensureFolderExists(filepath.Join(*dataFolder, "lectures")))
 	if err != nil {
@@ -84,6 +93,7 @@ func main() {
 	mux.Handle("/admin/", CatchPanic(sessions.WrapAdmin(server.CreateAdmin(lectures))))
 	mux.Handle("/statistics/", CatchPanic(sessions.WrapAdmin(server.CreateStatistics(lectures, sessions))))
 	mux.Handle("/settings/", CatchPanic(sessions.WrapAdmin(server.CreateSettings(lectures, states))))
+	mux.Handle("/logs/", CatchPanic(sessions.WrapAdmin(server.CreateLogs(logPath))))
 	mux.Handle("/image/", CatchPanic(Cache(server.CreateImages(lectures), 60, *cache)))
 	mux.Handle("/logout", session.LogoutHandler(sessions))
 

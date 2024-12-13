@@ -16,8 +16,10 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -631,6 +633,39 @@ func CreateSettings(lectures *data.Lectures, states *data.LectureStates) http.Ha
 		}
 
 		err = settingsTemp.Execute(w, settingsData{Title: lecture.Title, Settings: settings})
+		if err != nil {
+			log.Println(err)
+		}
+	})
+}
+
+var logsTemp = Templates.Lookup("logs.html")
+
+func CreateLogs(folder string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logFile := r.URL.Query().Get("l")
+		if logFile != "" {
+			if strings.Contains(logFile, "..") {
+				panic("invalid log file")
+			}
+			http.ServeFile(w, r, filepath.Join(folder, logFile))
+			return
+		}
+
+		entries, err := os.ReadDir(folder)
+		if err != nil {
+			panic(err)
+		}
+
+		var names []string
+		for _, e := range entries {
+			if !e.IsDir() {
+				names = append(names, e.Name())
+			}
+		}
+		sort.Strings(names)
+
+		err = logsTemp.Execute(w, names)
 		if err != nil {
 			log.Println(err)
 		}

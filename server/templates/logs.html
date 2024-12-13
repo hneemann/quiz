@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Logs</title>
+  <link rel="icon" type="image/svg" href="/static/icon.svg">
+  <link rel="stylesheet" type="text/css" href="/static/style.css"/>
+</head>
+<body>
+
+  <div class="main">
+  <h2>Logs</h2>
+  <table>
+  {{range .}}
+    <tr><td><a href="/logs/?l={{.}}">{{.}}</a></td></tr>
+  {{end}}
+  </table>
+
+  <p><a class="nav" href="/admin/">Zurück</a></p>
+  </div>
+
+</body>
+</html>
