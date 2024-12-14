@@ -347,16 +347,22 @@ func (s *Sessions) Wrap(parent http.Handler) http.Handler {
 }
 
 // WrapAdmin wraps a http.Handler and adds the session data to the context.
-// If the session is not an admin session, the user is redirected to the login page.
+// If there is no session data the user is redirected to the login page.
+// If the user is not an admin, an error is logged and the user gets an error message.
 func (s *Sessions) WrapAdmin(parent http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ses, ok := s.get(r)
-		if ok && ses.IsAdmin() {
-			c := context.WithValue(r.Context(), Key, ses)
-			parent.ServeHTTP(w, r.WithContext(c))
+		if ok {
+			if ses.IsAdmin() {
+				c := context.WithValue(r.Context(), Key, ses)
+				parent.ServeHTTP(w, r.WithContext(c))
+			} else {
+				log.Println("admin required", ses, r.URL)
+				panic("Fehlende Rechte zum Aufruf dieser Ressource!")
+			}
 		} else {
-			log.Println("admin required", ses, r.URL)
-			panic("Fehlende Rechte zum Aufruf dieser Ressource!")
+			url := base64.URLEncoding.EncodeToString([]byte(r.URL.Path))
+			http.Redirect(w, r, "/login?t="+url, http.StatusFound)
 		}
 	})
 }
