@@ -1022,15 +1022,58 @@ func createExpressionMethods(parser *parser2.Parser[float64]) value.MethodMap {
 	}
 }
 
-const ExpressionTypeId = 10
+var ExpressionTypeId value.Type
 
 func (e Expression) GetType() value.Type {
 	return ExpressionTypeId
 }
 
 var myParser = value.New().
-	AddFinalizerValue(func(f *value.FunctionGenerator) {
-
+	Modify(func(f *value.FunctionGenerator) {
+		ExpressionTypeId = f.RegisterType()
+		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(floatParser.GetParser()))
+	}).
+	AddStaticFunction("out", funcGen.Function[value.Value]{
+		Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
+			v := stack.Get(0)
+			log.Print(v)
+			return v, nil
+		},
+		Args:   1,
+		IsPure: true,
+	}.SetDescription("val", "writes a value to the log and returns the value.")).
+	AddStaticFunction("parseFunc",
+		funcGen.Function[value.Value]{
+			Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
+				if exp, ok := stack.Get(0).(value.String); ok {
+					if exp == "" {
+						return nil, GuiError{message: "Die Eingabe ist leer!"}
+					}
+					if list, ok := stack.Get(1).(*value.List); ok {
+						var args []string
+						argValues, err := list.ToSlice(stack)
+						if err != nil {
+							return nil, err
+						}
+						for _, v := range argValues {
+							if str, ok := v.(value.String); ok {
+								args = append(args, string(str))
+							} else {
+								return nil, fmt.Errorf("expected string, got %v", v)
+							}
+						}
+						return createExpression(string(exp), args)
+					} else {
+						return nil, fmt.Errorf("expected a list, got %v", stack.Get(1))
+					}
+				} else {
+					return nil, fmt.Errorf("expected string, got %v", stack.Get(0))
+				}
+			},
+			Args:   2,
+			IsPure: true,
+		}.SetDescription("strFunc", "listOfArgs", "parse a function using the list of arguments")).
+	Modify(func(f *funcGen.FunctionGenerator[value.Value]) {
 		f.AddStaticFunction("cmpFunc", funcGen.Function[value.Value]{
 			Func: value.Must(f.GenerateFromString(`let soll=parseFunc(a,vars);
                                                         let ist=parseFunc(b,vars);
@@ -1084,52 +1127,10 @@ var myParser = value.New().
 		}.SetDescription("expected", "is", "percent",
 			"compares two values and returns true if the difference is less than the given percent of the expected value"))
 
-		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(floatParser.GetParser()))
-
 		p := f.GetParser()
 		//p.SetNumberMatcher(number)
 		p.TextOperator(map[string]string{"in": "~", "is": "=", "or": "|", "and": "&"})
-	}).
-	AddStaticFunction("out", funcGen.Function[value.Value]{
-		Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
-			v := stack.Get(0)
-			log.Print(v)
-			return v, nil
-		},
-		Args:   1,
-		IsPure: true,
-	}.SetDescription("val", "writes a value to the log and returns the value.")).
-	AddStaticFunction("parseFunc",
-		funcGen.Function[value.Value]{
-			Func: func(stack funcGen.Stack[value.Value], closureStore []value.Value) (value.Value, error) {
-				if exp, ok := stack.Get(0).(value.String); ok {
-					if exp == "" {
-						return nil, GuiError{message: "Die Eingabe ist leer!"}
-					}
-					if list, ok := stack.Get(1).(*value.List); ok {
-						var args []string
-						argValues, err := list.ToSlice(stack)
-						if err != nil {
-							return nil, err
-						}
-						for _, v := range argValues {
-							if str, ok := v.(value.String); ok {
-								args = append(args, string(str))
-							} else {
-								return nil, fmt.Errorf("expected string, got %v", v)
-							}
-						}
-						return createExpression(string(exp), args)
-					} else {
-						return nil, fmt.Errorf("expected a list, got %v", stack.Get(1))
-					}
-				} else {
-					return nil, fmt.Errorf("expected string, got %v", stack.Get(0))
-				}
-			},
-			Args:   2,
-			IsPure: true,
-		}.SetDescription("strFunc", "listOfArgs", "parse a function using the list of arguments"))
+	})
 
 func createExpression(expr string, args []string) (value.Value, error) {
 	if len(expr) == 0 {
