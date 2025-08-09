@@ -1030,7 +1030,7 @@ func (e Expression) GetType() value.Type {
 
 var myParser = value.New().
 	Modify(func(f *value.FunctionGenerator) {
-		ExpressionTypeId = f.RegisterType()
+		ExpressionTypeId = f.RegisterType("Expression")
 		f.RegisterMethods(ExpressionTypeId, createExpressionMethods(floatParser.GetParser()))
 	}).
 	AddStaticFunction("out", funcGen.Function[value.Value]{
