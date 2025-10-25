@@ -1,12 +1,12 @@
 module github.com/hneemann/quiz
 
-go 1.23
+go 1.25
 
 require (
 	github.com/gomarkdown/markdown v0.0.0-20240930133441-72d49d9543d8
 	github.com/google/uuid v1.6.0
 	github.com/hneemann/objectDB v0.0.0-20240827072326-3997da940df8
-	github.com/hneemann/parser2 v0.0.0-20241207115235-9ad385a6e763
+	github.com/hneemann/parser2 v0.0.0-20251025054002-c957b6e0d56d
 	github.com/stretchr/testify v1.9.0
 	github.com/zitadel/oidc/v3 v3.31.0
 )
